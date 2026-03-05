@@ -1,0 +1,21 @@
+{
+  "name": "poposiroyo",
+  "version": "1.0.0",
+  "description": "Game CW Mobile",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JuanGilbert/poposiroyo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JuanGilbert/poposiroyo/issues"
+  },
+  "homepage": "https://github.com/JuanGilbert/poposiroyo#readme"
+}
