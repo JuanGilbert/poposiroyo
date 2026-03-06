@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/JuanGilbert/poposiroyo/issues"
   },
-  "homepage": "https://github.com/JuanGilbert/poposiroyo#readme"
+  "homepage": "https://github.com/JuanGilbert/poposiroyo#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
 }
