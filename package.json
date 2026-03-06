@@ -2,7 +2,7 @@
   "name": "poposiroyo",
   "version": "1.0.0",
   "description": "Game CW Mobile",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/JuanGilbert/poposiroyo/issues"
   },
-  "homepage": "https://github.com/JuanGilbert/poposiroyo#readme"
+  "homepage": "https://github.com/JuanGilbert/poposiroyo#readme",
+  "dependencies": {
+    "vite": "^7.3.1"
+  }
 }
