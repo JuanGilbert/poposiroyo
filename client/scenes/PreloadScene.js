@@ -6,7 +6,7 @@ export class PreloadScene extends Phaser.Scene {
     }
 
     preload() {
-        // Load assets here
+        // Load assets
     }
 
     create() {
