@@ -7,16 +7,15 @@ import { GameScene } from './scenes/GameScene.js';
 
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    backgroundColor: '#34495e',
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
+    scale: {
+        mode: Phaser.Scale.FIT, // Stretches to fit the screen without warping
+        autoCenter: Phaser.Scale.CENTER_BOTH, // Centers the game on the phone
+        width: 390,
+        height: 844
     },
+    backgroundColor: '#34495e',
+    scene: [Bootscene, PreloadScene, LobbyScene, MenuScene, GameScene]
+};
 
     scene: [
         Bootscene,
