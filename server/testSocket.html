@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket Test</title>
+</head>
+<body>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+
+const socket = io("http://localhost:3000");
+
+socket.on("connect", () => {
+    console.log("Connected:", socket.id);
+
+    // buat room
+    socket.emit("create_room");
+});
+
+socket.on("room_created", (roomId) => {
+    console.log("Room created:", roomId);
+});
+
+socket.on("player_joined", () => {
+    console.log("Player joined");
+});
+
+socket.on("start_game", (turn) => {
+    console.log("Game started. First turn:", turn);
+});
+
+socket.on("attack_result", (data) => {
+    console.log("Attack result:", data);
+});
+
+socket.on("next_turn", (turn) => {
+    console.log("Next turn:", turn);
+});
+
+socket.on("game_over", (data) => {
+    console.log("Game Over:", data);
+});
+
+</script>
+
+</body>
+</html>

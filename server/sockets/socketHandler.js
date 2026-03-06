@@ -1,114 +1,147 @@
-// socketHandler.js
-let rooms = {}; // semua room aktif
+export function socketHandler(io, socket, roomManager){
 
-module.exports = (io) => {
+  console.log("Player connected:", socket.id)
 
-  function checkWin(board) {
-    for (let row of board) for (let cell of row) if (cell === 1) return false;
-    return true;
-  }
+  /*
+  ========================
+  RANDOM MATCH
+  ========================
+  */
 
-  io.on("connection", (socket) => {
-    console.log("Player connected:", socket.id);
+  socket.on("find_match",()=>{
 
-    // ===== FRIEND MATCH =====
-    socket.on("create_room", () => {
-      const roomId = "room_" + Date.now();
-      rooms[roomId] = { players: [socket.id], boards: {}, turn: null, shots: {} };
-      socket.join(roomId);
-      socket.emit("room_created", roomId);
-    });
+    const room = roomManager.addToQueue(socket.id)
 
-    socket.on("join_room", (roomId) => {
-      const room = rooms[roomId];
-      if (!room) return socket.emit("error", "Room tidak ditemukan");
-      if (room.players.length >= 2) return socket.emit("error", "Room penuh");
+    if(room){
 
-      room.players.push(socket.id);
-      socket.join(roomId);
-      io.to(roomId).emit("player_joined");
+      room.players.forEach(player=>{
+        io.sockets.sockets.get(player)?.join(room.id)
+      })
 
-      if (room.players.length === 2) {
-        room.turn = room.players[0];
-        io.to(roomId).emit("start_game", room.turn);
-      }
-    });
+      io.to(room.id).emit("match_found",{
+        roomId:room.id,
+        players:room.players
+      })
+    }else{
 
-    // ===== RANDOM MATCH =====
-    socket.on("find_match", () => {
-      let roomEntry = Object.entries(rooms).find(([id, r]) => r.players.length < 2);
-      if (!roomEntry) {
-        const roomId = "room_" + Date.now();
-        rooms[roomId] = { players: [socket.id], boards: {}, turn: null, shots: {} };
-        socket.join(roomId);
-        socket.emit("room_created", roomId);
-      } else {
-        const [roomId, room] = roomEntry;
-        room.players.push(socket.id);
-        socket.join(roomId);
-        io.to(roomId).emit("player_joined");
-        if (room.players.length === 2) {
-          room.turn = room.players[0];
-          io.to(roomId).emit("start_game", room.turn);
-        }
-      }
-    });
+      socket.emit("matchmaking_wait")
+    }
 
-    // ===== SET BOARD =====
-    socket.on("set_board", ({ roomId, board }) => {
-      const room = rooms[roomId];
-      if (!room) return socket.emit("error", "Room tidak ditemukan");
-      room.boards[socket.id] = board;
-      room.shots[socket.id] = [];
-    });
+  })
 
-    // ===== ATTACK =====
-    socket.on("attack", ({ roomId, x, y }) => {
-      const room = rooms[roomId];
-      if (!room) return socket.emit("error", "Room tidak ditemukan");
-      if (room.turn !== socket.id) return socket.emit("error", "Bukan giliranmu");
-      if (x < 0 || x >= 8 || y < 0 || y >= 8) return socket.emit("error", "Koordinat tidak valid");
+  /*
+  ========================
+  FRIEND MATCH
+  ========================
+  */
 
-      const enemy = room.players.find(p => p !== socket.id);
-      if (!room.boards[enemy]) return socket.emit("error", "Enemy board belum disiapkan");
+  socket.on("create_room",()=>{
 
-      const board = room.boards[enemy];
-      const shotKey = `${x},${y}`;
-      if (room.shots[socket.id].includes(shotKey)) return;
+    const room = roomManager.createRoom(socket.id)
 
-      room.shots[socket.id].push(shotKey);
+    socket.join(room.id)
 
-      let result = "miss";
-      if (board[y][x] === 1) {
-        result = "hit";
-        board[y][x] = "hit";
-      }
+    socket.emit("room_created",{
+      roomId:room.id
+    })
+  })
 
-      io.to(roomId).emit("attack_result", { attacker: socket.id, x, y, result });
+  socket.on("join_room",(roomId)=>{
 
-      if (checkWin(board)) {
-        io.to(roomId).emit("game_over", { winner: socket.id });
-        delete rooms[roomId];
-        return;
-      }
+    const result = roomManager.joinRoom(roomId, socket.id)
 
-      room.turn = enemy;
-      io.to(roomId).emit("next_turn", room.turn);
-    });
+    if(result?.error){
+      socket.emit("room_error",result.error)
+      return
+    }
 
-    // ===== DISCONNECT =====
-    socket.on("disconnect", () => {
-      console.log("Player disconnected:", socket.id);
-      for (const roomId in rooms) {
-        const room = rooms[roomId];
-        if (room.players.includes(socket.id)) {
-          io.to(roomId).emit("player_left");
-          delete rooms[roomId];
-        }
-      }
-    });
-  });
-};
+    socket.join(roomId)
 
-// untuk HTTP GET rooms
-module.exports.getRooms = () => rooms;
+    io.to(roomId).emit("player_joined",{
+      players: result.players
+    })
+
+    if(result.players.length ===2){
+
+      io.to(roomId).emit("room_ready",{
+        roomId
+      })
+    }
+
+  })
+
+  /*
+  ========================
+  START GAME
+  ========================
+  */
+
+  socket.on("start_game",(roomId)=>{
+
+    const success = roomManager.startGame(roomId)
+
+    if(!success) return
+
+    io.to(roomId).emit("game_started")
+  })
+
+  /*
+  ========================
+  PLAYER ATTACK
+  ========================
+  */
+
+  socket.on("attack",(data)=>{
+
+    const {roomId,x,y} = data
+
+    const room = roomManager.getRoom(roomId)
+
+    if(!room) return
+
+    const enemy = room.players.find(p=>p!==socket.id)
+
+    io.to(roomId).emit("attack_result",{
+      attacker: socket.id,
+      x,
+      y
+    })
+
+  })
+
+  /*
+  ========================
+  GAME OVER
+  ========================
+  */
+
+  socket.on("game_over",(roomId)=>{
+
+    roomManager.endGame(roomId)
+
+    io.to(roomId).emit("game_finished")
+
+  })
+
+  /*
+  ========================
+  PLAYER DISCONNECT
+  ========================
+  */
+
+  socket.on("disconnect",()=>{
+
+    console.log("Player disconnected:", socket.id)
+
+    const roomId = roomManager.removePlayer(socket.id)
+
+    if(roomId){
+
+      io.to(roomId).emit("player_left")
+
+      roomManager.deleteRoom(roomId)
+    }
+
+  })
+
+}
