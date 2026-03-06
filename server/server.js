@@ -1,40 +1,102 @@
-// server.js
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const socketHandler = require("./sockets/socketHandler");
+import express from "express"
+import http from "http"
+import { Server } from "socket.io"
 
-const app = express();
-app.use(express.json());
+import { socketHandler } from "./sockets/socketHandler.js"
+import { RoomManager } from "./rooms/RoomManager.js"
 
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const app = express()
+app.use(express.json())
 
-// ======= LEADERBOARD =======
-const leaderboard = [];
+const server = http.createServer(app)
 
-// status server
-app.get("/status", (req, res) => res.json({ status: "Server is running" }));
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+})
 
-// lihat leaderboard
-app.get("/leaderboard", (req, res) => res.json({ leaderboard }));
+/*
+========================
+ROOM MANAGER INSTANCE
+========================
+*/
+const roomManager = new RoomManager()
 
-// simpan score
+/*
+========================
+LEADERBOARD (temporary)
+========================
+*/
+const leaderboard = []
+
+/*
+========================
+HTTP API
+========================
+*/
+
+app.get("/status", (req, res) => {
+  res.json({
+    status: "Server running",
+    rooms: roomManager.getRoomCount()
+  })
+})
+
+app.get("/leaderboard", (req, res) => {
+  res.json({
+    leaderboard
+  })
+})
+
 app.post("/score", (req, res) => {
-  const { player, score } = req.body;
-  if (!player || score == null) return res.status(400).json({ error: "Player & score required" });
 
-  leaderboard.push({ player, score });
-  res.json({ message: "Score saved", leaderboard });
-});
+  const { player, score } = req.body
 
-// lihat semua room aktif
-app.get("/rooms", (req, res) => {
-  res.json({ rooms: socketHandler.getRooms() }); // ambil rooms dari handler
-});
+  if (!player || score === undefined) {
+    return res.status(400).json({
+      error: "player and score required"
+    })
+  }
 
-// ======= SOCKET.IO GAME LOGIC =======
-socketHandler(io); // inject io ke handler
+  leaderboard.push({
+    player,
+    score,
+    time: Date.now()
+  })
 
-// ======= START SERVER =======
-server.listen(3000, () => console.log("Server running on port 3000"));
+  leaderboard.sort((a,b)=>b.score-a.score)
+
+  res.json({
+    success:true,
+    leaderboard
+  })
+})
+
+app.get("/rooms", (req,res)=>{
+  res.json({
+    rooms: roomManager.getRooms()
+  })
+})
+
+/*
+========================
+SOCKET CONNECTION
+========================
+*/
+
+io.on("connection",(socket)=>{
+  socketHandler(io, socket, roomManager)
+})
+
+/*
+========================
+START SERVER
+========================
+*/
+
+const PORT = 3000
+
+server.listen(PORT,()=>{
+  console.log(`Server running on port ${PORT}`)
+})
