@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { Bootscene } from 'scenes/Bootscene';
-import { PreloadScene } from 'scenes/PreloadScene';
-import { LobbyScene } from 'scenes/LobbyScene';
-import { MenuScene } from 'scenes/MenuScene';
-import { GameScene } from 'scenes/GameScene';
+import { Bootscene } from './scenes/Bootscene.js';
+import { PreloadScene } from './scenes/PreloadScene.js';
+import { LobbyScene } from './scenes/LobbyScene.js';
+import { MenuScene } from './scenes/MenuScene.js';
+import { GameScene } from './scenes/GameScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -13,17 +13,18 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 }, // Top-down style (no gravity)
+            gravity: { y: 0 },
             debug: false
         }
     },
-    scene: {
-        boot: Bootscene,
-        preload: PreloadScene,
-        lobby: LobbyScene,
-        menu: MenuScene,
-        game: GameScene
-    }
+
+    scene: [
+        Bootscene,
+        PreloadScene,
+        LobbyScene,
+        MenuScene,
+        GameScene
+    ]
 };
 
 const game = new Phaser.Game(config);
