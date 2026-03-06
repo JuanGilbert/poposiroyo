@@ -1,0 +1,15 @@
+# Dependency Node.js (Paling Penting!)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build folder (Folder hasil compile game Phaser kalian nanti)
+dist/
+build/
+
+# Environment variables (Sangat penting kalau nanti kalian pakai API key/database)
+.env
+.env.local
+
+# File sistem Mac (berjaga-jaga kalau ada anggota tim yang pakai Mac)
+.DS_Store
