@@ -2,9 +2,11 @@
   "name": "poposiroyo",
   "version": "1.0.0",
   "description": "Game CW Mobile",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite client",
+    "build": "vite build client",
+    "preview": "vite preview client"
   },
   "repository": {
     "type": "git",
@@ -13,7 +15,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/JuanGilbert/poposiroyo/issues"
   },
@@ -21,5 +23,7 @@
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+    "phaser": "^3.90.0",
+    "vite": "^7.3.1"
   }
 }
