@@ -1,0 +1,56 @@
+{
+  "version": "v1",
+  "assets_base_url": "/",
+  "config": {
+    "gameplay": {
+      "placementTime": 30
+    },
+    "characters": {
+      "Assassin": {
+        "name": "Assassin",
+        "tileSize": 1,
+        "hp": 1,
+        "speed": 90,
+        "moveRange": 4,
+        "attackRange": 1,
+        "attackOffsets": [{"r": 0, "c": 0}]
+      },
+      "Mage": {
+        "name": "Mage",
+        "tileSize": 2,
+        "hp": 2,
+        "speed": 50,
+        "moveRange": 2,
+        "attackRange": 3,
+        "attackOffsets": [
+          {"r": 0, "c": 0}, {"r": -1, "c": 0}, {"r": 1, "c": 0}, {"r": 0, "c": -1}, {"r": 0, "c": 1}
+        ]
+      },
+      "Paladin": {
+        "name": "Paladin",
+        "tileSize": 3,
+        "hp": 5,
+        "speed": 30,
+        "moveRange": 2,
+        "attackRange": 1,
+        "attackOffsets": [
+          {"r": 0, "c": 0}, {"r": 0, "c": -1}, {"r": 0, "c": 1}
+        ]
+      },
+      "Scout": {
+        "name": "Scout",
+        "tileSize": 1,
+        "hp": 2,
+        "speed": 100,
+        "moveRange": 5,
+        "attackRange": 4,
+        "attackOffsets": [{"r": 0, "c": 0}],
+        "revealOffsets": [
+          {"r": 0, "c": 0}, {"r": -1, "c": 0}, {"r": 1, "c": 0}, {"r": 0, "c": -1}, {"r": 0, "c": 1},
+          {"r": -2, "c": 0}, {"r": 2, "c": 0}, {"r": 0, "c": -2}, {"r": 0, "c": 2},
+          {"r": -1, "c": -1}, {"r": -1, "c": 1}, {"r": 1, "c": -1}, {"r": 1, "c": 1}
+        ]
+      }
+    }
+  }
+}

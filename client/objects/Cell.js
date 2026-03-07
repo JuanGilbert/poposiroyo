@@ -8,6 +8,7 @@ export class Cell extends Phaser.GameObjects.Container {
         this.row = row;
         this.col = col;
         this.isEnemyBoard = isEnemyBoard;
+        this.fogReturnTurn = 0;
 
         // States
         this.hasUnit = false;
@@ -50,6 +51,7 @@ export class Cell extends Phaser.GameObjects.Container {
         if (this.isEnemyBoard) {
             this.isFogged = true;
             this.fogSquare.setVisible(true);
+            this.fogReturnTurn = 0; // Reset the timer
         }
     }
 

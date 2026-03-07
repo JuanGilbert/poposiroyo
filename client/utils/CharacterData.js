@@ -3,35 +3,54 @@
 export const CHARACTER_DATA = {
     "Assassin": {
         name: "Assassin",
-        size: 1,        // Takes up 1 tile
-        hp: 1,          // Dies in 1 hit
-        speed: 90,      // Very fast (attacks often)
+        tileSize: 1,       // Fixed name
+        hp: 1,
+        speed: 90,
+        moveRange: 4,      // Added
+        attackRange: 1,    // Added
         attackOffsets: [
-            { r: 0, c: 0 } // Hits only the clicked square
+            { r: 0, c: 0 }
         ]
     },
     "Mage": {
         name: "Mage",
-        size: 2,        // Takes up 2 tiles (e.g., 1x2 rectangle)
-        hp: 2,          // Takes 2 hits to die
-        speed: 50,      // Average speed
+        tileSize: 2,       // Fixed name
+        hp: 2,
+        speed: 50,
+        moveRange: 2,      // Added
+        attackRange: 3,    // Added
         attackOffsets: [
-            { r: 0, c: 0 },   // Center
-            { r: -1, c: 0 },  // Top
-            { r: 1, c: 0 },   // Bottom
-            { r: 0, c: -1 },  // Left
-            { r: 0, c: 1 }    // Right
-        ] // Creates a cross-shaped explosion
+            { r: 0, c: 0 }, { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }
+        ]
     },
-    "Paladin": {
-        name: "Paladin",
-        size: 3,        // Takes up 3 tiles
-        hp: 5,          // Massive health pool
-        speed: 30,      // Very slow
+        "Paladin": {
+            name: "Paladin",
+            tileSize: 3,       // Make sure this says tileSize, NOT size!
+            hp: 5,
+            speed: 30,
+            moveRange: 2,      // Paladins are heavy and slow
+            attackRange: 1,    // Melee only
+            attackOffsets: [
+                { r: 0, c: 0 },
+                { r: 0, c: -1 },
+                { r: 0, c: 1 }
+            ]
+        },
+    "Scout": {
+        name: "Scout",
+        tileSize: 1,
+        hp: 2,
+        speed: 100,        // Fastest unit in the game
+        moveRange: 5,
+        attackRange: 4,
         attackOffsets: [
-            { r: 0, c: 0 },
-            { r: 0, c: -1 },
-            { r: 0, c: 1 }
-        ] // Cleaves 3 tiles horizontally
-    }
+            { r: 0, c: 0 } // Only hits the exact square clicked
+        ],
+        // NEW: The "Flare" effect. Reveals a huge diamond shape!
+        revealOffsets: [
+            { r: 0, c: 0 }, { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 },
+            { r: -2, c: 0 }, { r: 2, c: 0 }, { r: 0, c: -2 }, { r: 0, c: 2 },
+            { r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 }
+        ]
+    },
 };

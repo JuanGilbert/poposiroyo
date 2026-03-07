@@ -10,70 +10,65 @@ export class Board {
         this.rows = rows;
         this.cols = cols;
 
-        this.grid = []; // This will be a 2D array: grid[row][col]
-
+        this.grid = [];
         this.createGrid();
     }
 
     createGrid() {
-        // Loop through the 10 rows
         for (let row = 0; row < this.rows; row++) {
             let gridRow = [];
-
-            // Loop through the 10 columns inside each row
             for (let col = 0; col < this.cols; col++) {
-                // Calculate the exact pixel X and Y on the screen
                 const x = this.startX + (col * this.cellSize);
                 const y = this.startY + (row * this.cellSize);
-
-                // Instantiate the Cell
                 const cell = new Cell(this.scene, this, x, y, this.cellSize, row, col, this.isEnemyBoard);
-
-                // Add the cell to our temporary row array
                 gridRow.push(cell);
             }
-
-            // Add the completed row to the main grid
             this.grid.push(gridRow);
         }
     }
 
-    // Check if a set of coordinates is "walkable"
     isAreaAvailable(coordsArray, ignoreUnit = null) {
         for (let coord of coordsArray) {
-            // 1. Out of bounds check
             if (coord.row < 0 || coord.row >= this.rows || coord.col < 0 || coord.col >= this.cols) {
                 return false;
             }
-
-            // 2. Occupied check
             const cell = this.grid[coord.row][coord.col];
             if (cell.hasUnit && cell.unitRef !== ignoreUnit) {
-                return false; // Someone else is standing here!
+                return false;
             }
         }
         return true;
     }
 
-// Clear unit from old cells and move to new cells
-    moveUnit(unit, newRow, newCol) {
-        // 1. Clear old cells
+    // Places a brand new unit on the board
+    spawnUnit(unit, footprintArray) {
+        footprintArray.forEach(coord => {
+            const cell = this.grid[coord.row][coord.col];
+            cell.hasUnit = true;
+            cell.unitRef = unit;
+            cell.baseSquare.setFillStyle(unit.isPlayerUnit ? 0x2196f3 : 0xff9900);
+        });
+        unit.updatePosition(footprintArray);
+    }
+
+    // Clears the unit from its old spot and moves it to the new array of coordinates
+    moveUnit(unit, newCoordsArray) {
+        // 1. Clear old cells and set color back to Green
         unit.coordinates.forEach(coord => {
             const cell = this.grid[coord.row][coord.col];
             cell.hasUnit = false;
             cell.unitRef = null;
+            cell.baseSquare.setFillStyle(0x4caf50);
         });
 
-        // 2. Calculate new footprint (Example for 1x1, can be expanded for Big Units)
-        const newCoords = [{row: newRow, col: newCol}];
-
-        // 3. Update new cells
-        newCoords.forEach(coord => {
+        // 2. Update new cells and set color to Blue/Orange
+        newCoordsArray.forEach(coord => {
             const cell = this.grid[coord.row][coord.col];
             cell.hasUnit = true;
             cell.unitRef = unit;
+            cell.baseSquare.setFillStyle(unit.isPlayerUnit ? 0x2196f3 : 0xff9900);
         });
 
-        unit.updatePosition(newCoords);
+        unit.updatePosition(newCoordsArray);
     }
 }

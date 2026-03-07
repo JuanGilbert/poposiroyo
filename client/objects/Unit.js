@@ -8,6 +8,8 @@ export class Unit {
         this.moveRange = blueprint.moveRange;
         this.attackRange = blueprint.attackRange;
         this.attackOffsets = blueprint.attackOffsets;
+        this.revealOffsets = blueprint.revealOffsets || blueprint.attackOffsets;
+        this.personalTurnCount = 0;
 
         // Dynamic Game State
         this.currentHp = this.maxHp;
@@ -31,5 +33,12 @@ export class Unit {
     // Call this when the unit uses its Move action
     updatePosition(newCoordinates) {
         this.coordinates = newCoordinates;
+    }
+
+    takePersonalTurn() {
+        this.personalTurnCount++;
+        // Future code goes here:
+        // if (this.hasPoison) this.takeDamage(1);
+        console.log(`${this.name} starts its personal turn (Personal Turn ${this.personalTurnCount})`);
     }
 }

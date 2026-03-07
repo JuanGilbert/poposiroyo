@@ -22,8 +22,8 @@ const config = {
     scene: [
         Bootscene,
         PreloadScene,
-        LobbyScene,
         MenuScene,
+        LobbyScene,
         GameScene
     ]
 };
