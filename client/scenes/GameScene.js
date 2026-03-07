@@ -48,6 +48,10 @@ export class GameScene extends Phaser.Scene {
 
     // --- SETUP & SPAWNERS ---
     spawnPlayerTeam() {
+        // 1. Get the CMS data from the registry
+        const gameConfig = this.registry.get('gameConfig');
+        const CHARACTER_DATA = gameConfig.characters;
+
         let currentRow = 1;
         this.playerTeamChoices.forEach((charName) => {
             const blueprint = CHARACTER_DATA[charName];
@@ -65,6 +69,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     spawnEnemyDummy() {
+        // 1. Get the CMS data from the registry
+        const gameConfig = this.registry.get('gameConfig');
+        const CHARACTER_DATA = gameConfig.characters;
+
         const pBlueprint = CHARACTER_DATA['Paladin'];
         const enemy1 = new Unit(pBlueprint, false);
         this.enemyBoard.spawnUnit(enemy1, [{row: 2, col: 5}, {row: 3, col: 5}, {row: 4, col: 5}]);
