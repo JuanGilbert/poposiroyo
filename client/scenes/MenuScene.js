@@ -16,28 +16,34 @@ export class MenuScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        const lobbyButton = this.add.text(screenWidth / 2, screenHeight * 0.6, "ENTER LOBBY", {
+        const lobbyButton = this.add.text(screenWidth / 2, screenHeight * 0.6, "START GAME", {
             fontSize: '24px',
             fill: '#ffffff',
-            backgroundColor: '#8c9b7a', // Matcha green
+            backgroundColor: '#8c9b7a',
             padding: { left: 20, right: 20, top: 10, bottom: 10 }
         }).setOrigin(0.5);
 
-        // 4. Make it interactive (clickable/tappable)
+        const settingsBtn = this.add.text(screenWidth / 2, screenHeight * 0.75, "⚙️ SETTINGS", {
+            fontSize: '20px', fill: '#aaaaaa'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        settingsBtn.on('pointerdown', () => settingsBtn.setScale(0.9));
+        settingsBtn.on('pointerup', () => {
+            settingsBtn.setScale(1);
+            // Launch runs it on top instead of switching to it
+            this.scene.launch('SettingsScene');
+        });
+
         lobbyButton.setInteractive({ useHandCursor: true });
 
-        // 5. Add the "Juice" (Button animations and logic)
         lobbyButton.on('pointerdown', () => {
-            // Shrink slightly when the player's finger presses down
             lobbyButton.setScale(0.95);
         });
 
         lobbyButton.on('pointerup', () => {
-            // Snap back to normal size when released
             lobbyButton.setScale(1);
-
-            // Launch the Lobby Scene!
-            this.scene.start('LobbyScene');
+            // Change the destination to MatchmakingScene!
+            this.scene.start('MatchmakingScene');
         });
     }
 }
