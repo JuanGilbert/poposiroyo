@@ -19,14 +19,14 @@ export class GameScene extends Phaser.Scene {
         const screenHeight = this.scale.height;
         this.cameras.main.setBounds(0, 0, screenWidth * 2, screenHeight);
 
-        // FIX 3: Calculate a cellSize that fits both the width AND height
+        // FIX 3: Calculate a cellSize and force it to a whole number to prevent sub-pixel gaps
         const maxGridWidth = screenWidth - 40;
-        const maxGridHeight = screenHeight - 220; // Leaves safe room for top & bottom UI
-        const cellSize = Math.min(maxGridWidth / 10, maxGridHeight / 10);
+        const maxGridHeight = screenHeight - 220;
+        const cellSize = Math.floor(Math.min(maxGridWidth / 10, maxGridHeight / 10)); // Added Math.floor!
 
-        // FIX 4: Center the grid perfectly and remove the old offset
+        // FIX 4: Center the grid perfectly
         const gridStartX = (screenWidth - (cellSize * 10)) / 2;
-        const gridStartY = 100; // Pins it nicely below the Turn Tracker
+        const gridStartY = 100;
 
         // 1. CREATE BOARDS
         this.playerBoard = new Board(this, gridStartX, gridStartY, cellSize, false);
@@ -193,7 +193,7 @@ export class GameScene extends Phaser.Scene {
                 }
             });
 
-            this.actionMenuContainer.setVisible(false);
+            this.setActionMenuVisible(false);
             this.startNextTurn();
 
         } else if (this.playerActionState === 'MOVING') {
@@ -214,7 +214,7 @@ export class GameScene extends Phaser.Scene {
 
             if (this.playerBoard.isAreaAvailable(newCoords, this.currentUnit)) {
                 this.playerBoard.moveUnit(this.currentUnit, newCoords);
-                this.actionMenuContainer.setVisible(false);
+                this.setActionMenuVisible(false);
                 this.startNextTurn();
             }
         }
@@ -251,10 +251,10 @@ export class GameScene extends Phaser.Scene {
             this.playerActionState = null;
             this.moveBtnBg.setStrokeStyle(0);
             this.atkBtnBg.setStrokeStyle(0);
-            this.actionMenuContainer.setVisible(true);
+            this.setActionMenuVisible(true);
         } else {
             this.gameState = 'ENEMY_TURN';
-            this.actionMenuContainer.setVisible(false);
+            this.setActionMenuVisible(false);
             this.time.delayedCall(1200, () => this.fakeEnemyTurn());
         }
     }
@@ -278,19 +278,29 @@ export class GameScene extends Phaser.Scene {
 
     // --- UI DRAWING METHODS ---
     createActionMenu(screenWidth, screenHeight) {
-        // Pops up at the bottom center of the screen
-        this.actionMenuContainer = this.add.container(screenWidth / 2, screenHeight - 120).setScrollFactor(0).setDepth(100).setVisible(false);
-        const bg = this.add.rectangle(0, 75, 260, 80, 0x222222).setStrokeStyle(2, 0xffffff);
+        // Calculate the absolute center-bottom position
+        const centerX = screenWidth / 2;
+        const baseY = screenHeight - 45;
+
+        // Apply setScrollFactor(0) and setDepth() directly to EVERY element
+        const bg = this.add.rectangle(centerX, baseY, 260, 80, 0x222222)
+            .setStrokeStyle(2, 0xffffff).setScrollFactor(0).setDepth(100);
 
         // MOVE BUTTON
-        this.moveBtnBg = this.add.rectangle(-65, 75, 100, 50, 0x2196f3).setInteractive();
-        const moveTxt = this.add.text(-65, 75, "MOVE", { fontSize: '18px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        this.moveBtnBg = this.add.rectangle(centerX - 65, baseY, 100, 50, 0x2196f3)
+            .setInteractive().setScrollFactor(0).setDepth(101);
+        const moveTxt = this.add.text(centerX - 65, baseY, "MOVE", { fontSize: '18px', fill: '#fff', fontStyle: 'bold' })
+            .setOrigin(0.5).setScrollFactor(0).setDepth(101);
 
         // ATTACK BUTTON
-        this.atkBtnBg = this.add.rectangle(65, 75, 100, 50, 0xf44336).setInteractive();
-        const atkTxt = this.add.text(65, 75, "ATTACK", { fontSize: '18px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        this.atkBtnBg = this.add.rectangle(centerX + 65, baseY, 100, 50, 0xf44336)
+            .setInteractive().setScrollFactor(0).setDepth(101);
+        const atkTxt = this.add.text(centerX + 65, baseY, "ATTACK", { fontSize: '18px', fill: '#fff', fontStyle: 'bold' })
+            .setOrigin(0.5).setScrollFactor(0).setDepth(101);
 
-        this.actionMenuContainer.add([bg, this.moveBtnBg, moveTxt, this.atkBtnBg, atkTxt]);
+        // Group them in a simple array instead of a Phaser Container
+        this.actionMenuElements = [bg, this.moveBtnBg, moveTxt, this.atkBtnBg, atkTxt];
+        this.setActionMenuVisible(false);
 
         this.moveBtnBg.on('pointerdown', () => {
             this.playerActionState = 'MOVING';
@@ -303,6 +313,11 @@ export class GameScene extends Phaser.Scene {
             this.atkBtnBg.setStrokeStyle(3, 0xffff00); // Highlight yellow
             this.moveBtnBg.setStrokeStyle(0);
         });
+    }
+
+    // New Helper Method to toggle the array!
+    setActionMenuVisible(isVisible) {
+        this.actionMenuElements.forEach(el => el.setVisible(isVisible));
     }
 
     updateTurnTrackerUI() {

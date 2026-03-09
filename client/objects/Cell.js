@@ -16,20 +16,24 @@ export class Cell extends Phaser.GameObjects.Container {
         this.isHit = false;
         this.isFogged = isEnemyBoard;
 
-        // FIX 1: Add .setOrigin(0) to align the visuals with the hit area
+        // 1. The Base Square
         this.baseSquare = scene.add.rectangle(0, 0, size, size, 0x4caf50).setOrigin(0);
         this.baseSquare.setStrokeStyle(1, 0x000000);
 
-        // FIX 2: Add .setOrigin(0) here too
+        // 2. The Fog Square (Fix: Added setStrokeStyle to prevent squares from blending together!)
         this.fogSquare = scene.add.rectangle(0, 0, size, size, 0x1a1a1a).setOrigin(0);
+        this.fogSquare.setStrokeStyle(1, 0x000000);
         this.fogSquare.setVisible(this.isFogged);
 
         this.add([this.baseSquare, this.fogSquare]);
 
-        // Sizing and interactivity now match perfectly!
+        // Sizing
         this.setSize(size, size);
         scene.add.existing(this);
-        this.setInteractive();
+
+        // 3. FIX: Create a custom Hit Area so clicks perfectly match the top-left visuals
+        const hitArea = new Phaser.Geom.Rectangle(0, 0, size, size);
+        this.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
         this.on('pointerdown', this.handleClick, this);
     }
