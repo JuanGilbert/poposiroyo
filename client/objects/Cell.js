@@ -12,22 +12,21 @@ export class Cell extends Phaser.GameObjects.Container {
 
         // States
         this.hasUnit = false;
-        this.unitRef = null; // Which specific unit is sitting here
+        this.unitRef = null;
         this.isHit = false;
-        this.isFogged = isEnemyBoard; // Enemy board starts fogged!
+        this.isFogged = isEnemyBoard;
 
-        // 1. The Base Square (Grass/Floor)
-        this.baseSquare = scene.add.rectangle(0, 0, size, size, 0x4caf50);
+        // FIX 1: Add .setOrigin(0) to align the visuals with the hit area
+        this.baseSquare = scene.add.rectangle(0, 0, size, size, 0x4caf50).setOrigin(0);
         this.baseSquare.setStrokeStyle(1, 0x000000);
 
-        // 2. The Fog Cover (Dark Grey/Black)
-        this.fogSquare = scene.add.rectangle(0, 0, size, size, 0x1a1a1a);
+        // FIX 2: Add .setOrigin(0) here too
+        this.fogSquare = scene.add.rectangle(0, 0, size, size, 0x1a1a1a).setOrigin(0);
         this.fogSquare.setVisible(this.isFogged);
 
-        // Add them to this container
         this.add([this.baseSquare, this.fogSquare]);
 
-        // Sizing and interactivity
+        // Sizing and interactivity now match perfectly!
         this.setSize(size, size);
         scene.add.existing(this);
         this.setInteractive();

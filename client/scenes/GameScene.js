@@ -19,9 +19,14 @@ export class GameScene extends Phaser.Scene {
         const screenHeight = this.scale.height;
         this.cameras.main.setBounds(0, 0, screenWidth * 2, screenHeight);
 
-        const cellSize = (screenWidth - 40) / 10;
-        const gridStartX = 20 + (cellSize / 2);
-        const gridStartY = screenHeight * 0.3;
+        // FIX 3: Calculate a cellSize that fits both the width AND height
+        const maxGridWidth = screenWidth - 40;
+        const maxGridHeight = screenHeight - 220; // Leaves safe room for top & bottom UI
+        const cellSize = Math.min(maxGridWidth / 10, maxGridHeight / 10);
+
+        // FIX 4: Center the grid perfectly and remove the old offset
+        const gridStartX = (screenWidth - (cellSize * 10)) / 2;
+        const gridStartY = 100; // Pins it nicely below the Turn Tracker
 
         // 1. CREATE BOARDS
         this.playerBoard = new Board(this, gridStartX, gridStartY, cellSize, false);

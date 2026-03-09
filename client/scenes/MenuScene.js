@@ -9,9 +9,9 @@ export class MenuScene extends Phaser.Scene {
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
 
-        this.add.text(screenWidth / 2, screenHeight * 0.3, "BARISTA\nBATTLE", {
+        this.add.text(screenWidth / 2, screenHeight * 0.3, "RPG\nBATTLE", {
             fontSize: '48px',
-            fill: '#fff4e6', // Creamy latte white
+            fill: '#fff4e6',
             align: 'center',
             fontStyle: 'bold'
         }).setOrigin(0.5);
