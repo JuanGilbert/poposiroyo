@@ -7,21 +7,23 @@ import { GameScene } from './scenes/GameScene.js';
 
 const config = {
     type: Phaser.AUTO,
+    pixelArt: true,
     scale: {
-        mode: Phaser.Scale.FIT, // Stretches to fit the screen without warping
-        autoCenter: Phaser.Scale.CENTER_BOTH, // Centers the game on the phone
-        width: 390,
-        height: 844
+        // Change from FIT to RESIZE
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        // When using RESIZE, width and height become the "minimum" starting size,
+        // but Phaser will immediately override them to match the phone screen.
+        width: '100%',
+        height: '100%'
     },
     backgroundColor: '#34495e',
-    scene: [Bootscene, PreloadScene, LobbyScene, MenuScene, GameScene]
-};
 
     scene: [
         Bootscene,
         PreloadScene,
-        LobbyScene,
         MenuScene,
+        LobbyScene,
         GameScene
     ]
 };
