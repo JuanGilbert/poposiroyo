@@ -37,6 +37,16 @@ export class GameScene extends Phaser.Scene {
         this.createToggleButton(screenWidth, screenHeight);
         this.createActionMenu(screenWidth, screenHeight); // New Battle Menu!
 
+        // ⚙️ Settings Icon (Top Left)
+        const settingsIcon = this.add.text(30, 30, "⚙️", { fontSize: '28px' })
+            .setOrigin(0.5).setScrollFactor(0).setDepth(100).setInteractive({ useHandCursor: true });
+
+        settingsIcon.on('pointerdown', () => settingsIcon.setScale(0.9));
+        settingsIcon.on('pointerup', () => {
+            settingsIcon.setScale(1);
+            this.scene.launch('SettingsScene');
+        });
+
         // 3. SPAWN UNITS
         this.activeUnits = [];
         this.turnQueue = [];
@@ -355,6 +365,7 @@ export class GameScene extends Phaser.Scene {
             startX += boxSize + spacing;
         }
     }
+
 
     // Helper to highlight units during placement
     highlightUnit(unit, color) {

@@ -4,6 +4,9 @@ import { PreloadScene } from './scenes/PreloadScene.js';
 import { LobbyScene } from './scenes/LobbyScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { MatchmakingScene } from './scenes/MatchmakingScene.js';
+import { SettingsScene } from './scenes/SettingsScene.js';
+import { RoomScene } from "./scenes/RoomScene.js";
 
 const config = {
     type: Phaser.AUTO,
@@ -23,8 +26,11 @@ const config = {
         Bootscene,
         PreloadScene,
         MenuScene,
+        MatchmakingScene,
+        RoomScene,
         LobbyScene,
-        GameScene
+        GameScene,
+        SettingsScene
     ]
 };
 
