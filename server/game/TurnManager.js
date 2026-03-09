@@ -1,7 +1,7 @@
 class TurnManager {
 
-    constructor() {
-        this.currentTurn = "p1";
+    constructor(startPlayer = "p1") {
+        this.currentTurn = startPlayer;
     }
 
     getTurn() {
