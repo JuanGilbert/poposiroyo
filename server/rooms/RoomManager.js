@@ -6,7 +6,14 @@ export class RoomManager {
   }
 
   generateRoomId(){
-    return "room_" + Math.random().toString(36).substring(2,8)
+
+    let roomId
+
+    do{
+      roomId = "room_" + Math.random().toString(36).substring(2,8)
+    }while(this.rooms[roomId])
+
+    return roomId
   }
 
   createRoom(hostId){
@@ -33,6 +40,10 @@ export class RoomManager {
 
     if(!room) return {error:"ROOM_NOT_FOUND"}
 
+    if(room.players.includes(playerId)){
+      return {error:"ALREADY_IN_ROOM"}
+    }
+
     if(room.players.length >=2){
       return {error:"ROOM_FULL"}
     }
@@ -46,15 +57,13 @@ export class RoomManager {
     return room
   }
 
-  /*
-  RANDOM MATCHMAKING
-  */
-
   addToQueue(playerId){
 
-    if(!this.waitingQueue.includes(playerId)){
-      this.waitingQueue.push(playerId)
+    if(this.waitingQueue.includes(playerId)){
+      return null
     }
+
+    this.waitingQueue.push(playerId)
 
     if(this.waitingQueue.length >=2){
 

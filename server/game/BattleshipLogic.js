@@ -2,6 +2,10 @@ class BattleshipLogic {
 
     static checkHit(board, x, y) {
 
+        if (!board[y] || board[y][x] === undefined) {
+            return "invalid";
+        }
+
         if (board[y][x] === 1) {
             board[y][x] = "hit";
             return "hit";
@@ -15,7 +19,7 @@ class BattleshipLogic {
         return "already";
     }
 
-    static isShipSunk(board) {
+    static areAllShipsDestroyed(board) {
 
         for (let row of board) {
             for (let cell of row) {
