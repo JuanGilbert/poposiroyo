@@ -5,12 +5,15 @@ export function socketHandler(io, socket, roomManager) {
     const room = roomManager.addToQueue(socket.id);
     if(room){
       room.players.forEach(player => io.sockets.sockets.get(player)?.join(room.id));
-
-      // ONLY emit match_found. Do not emit game_started yet!
       io.to(room.id).emit("match_found", { roomId: room.id, players: room.players });
     } else {
       socket.emit("matchmaking_wait");
     }
+  });
+
+  // FIX: Remove players from the queue if they click Cancel!
+  socket.on("cancel_matchmaking", () => {
+    roomManager.removeFromQueue(socket.id);
   });
 
   socket.on("create_room", () => {
@@ -28,7 +31,6 @@ export function socketHandler(io, socket, roomManager) {
     if(result.players.length === 2) io.to(roomId).emit("room_ready", { roomId });
   });
 
-  // --- SETUP PHASE SYNC ---
   socket.on("player_ready", (data) => {
     const { roomId, units } = data;
     const room = roomManager.getRoom(roomId);
@@ -37,19 +39,16 @@ export function socketHandler(io, socket, roomManager) {
     if (!room.readyPlayers) room.readyPlayers = {};
     room.readyPlayers[socket.id] = units;
 
-    // When BOTH players have clicked ready on the Placement phase:
     if (Object.keys(room.readyPlayers).length === 2) {
       roomManager.startGame(roomId);
       const p1 = room.players[0];
       const p2 = room.players[1];
 
-      // Give P1 the data for P2's units, and vice versa!
       io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2] });
       io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1] });
     }
   });
 
-  // --- COMBAT RELAY ---
   socket.on("combat_action", (data) => {
     const { roomId } = data;
     socket.to(roomId).emit("combat_action_received", data);

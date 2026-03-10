@@ -6,10 +6,10 @@ let _socket = null;
 export function connect() {
   if (_socket && _socket.connected) return _socket;
 
-  const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+  // FIX: Dynamically connect to whatever IP address the player typed in their URL bar!
+  const serverUrl = import.meta.env.VITE_SERVER_URL || `http://${window.location.hostname}:3000`;
   _socket = io(serverUrl);
 
-  // Keep FE2's board_ready intercept logic just in case
   const originalEmit = _socket.emit.bind(_socket);
   _socket.emit = function(event, data, ...args) {
     if (event === EVENTS.BOARD_READY && data?.board) {
