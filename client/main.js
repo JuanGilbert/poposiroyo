@@ -7,6 +7,7 @@ import { GameScene } from './scenes/GameScene.js';
 import { MatchmakingScene } from './scenes/MatchmakingScene.js';
 import { SettingsScene } from './scenes/SettingsScene.js';
 import { RoomScene } from "./scenes/RoomScene.js";
+import { BattleUI } from './objects/BattleUI.js';
 
 const config = {
     type: Phaser.AUTO,
