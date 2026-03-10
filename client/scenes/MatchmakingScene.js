@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SocketManager } from '../network/SocketManager.js';
+import * as SocketManager from '../network/SocketManager.js';
 
 
 export class MatchmakingScene extends Phaser.Scene {
@@ -36,20 +36,14 @@ export class MatchmakingScene extends Phaser.Scene {
         // --- 3. BUTTON LOGIC ---
         rankedBtnBg.on('pointerup', () => {
             rankedBtnBg.setScale(1);
+
             this.mainUIElements.forEach(el => el.setVisible(false));
             this.searchingUIElements.forEach(el => el.setVisible(true));
             this.isSearching = true;
 
-            // 3. Ask the server for a match!
-            SocketManager.emit("find_match");
-
-            // 4. Wait for the server to find another player
-            SocketManager.on("match_found", (data) => {
-                this.isSearching = false;
-                SocketManager.off("match_found"); // cleanup
-                // Pass the real room ID to the lobby!
-                this.scene.start('LobbyScene', { gameMode: 'ranked', roomId: data.roomId });
-            });
+            // FE1 FIX: Trigger FE2's matchmaking logic!
+            sendQuickMatch();
+            // (_onMatchFound in NetworkEvents will automatically handle the scene transition)
         });
 
         cancelBtn.on('pointerdown', () => {
@@ -57,9 +51,8 @@ export class MatchmakingScene extends Phaser.Scene {
             this.searchingUIElements.forEach(el => el.setVisible(false));
             this.mainUIElements.forEach(el => el.setVisible(true));
 
-            // Turn off the listener so we don't accidentally get pulled into a game later
-            SocketManager.off("match_found");
-            // In a full game, you would also emit a "leave_queue" event to the server here!
+            // Tell the server we backed out!
+            sendCancelMatchmaking();
         });
 
         friendlyBtnBg.on('pointerdown', () => friendlyBtnBg.setScale(0.95));

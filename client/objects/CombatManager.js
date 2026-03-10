@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { SocketManager } from '../network/SocketManager.js';
+import * as SocketManager from '../network/SocketManager.js';
+
 
 export class CombatManager {
     constructor(scene) {

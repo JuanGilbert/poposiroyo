@@ -5,6 +5,8 @@ export function socketHandler(io, socket, roomManager) {
     const room = roomManager.addToQueue(socket.id);
     if(room){
       room.players.forEach(player => io.sockets.sockets.get(player)?.join(room.id));
+
+      // ONLY emit match_found. Do not emit game_started yet!
       io.to(room.id).emit("match_found", { roomId: room.id, players: room.players });
     } else {
       socket.emit("matchmaking_wait");
@@ -35,13 +37,13 @@ export function socketHandler(io, socket, roomManager) {
     if (!room.readyPlayers) room.readyPlayers = {};
     room.readyPlayers[socket.id] = units;
 
-    // When both players have placed their units on the board:
+    // When BOTH players have clicked ready on the Placement phase:
     if (Object.keys(room.readyPlayers).length === 2) {
       roomManager.startGame(roomId);
       const p1 = room.players[0];
       const p2 = room.players[1];
 
-      // Give P1 the data for P2's units, and vice versa
+      // Give P1 the data for P2's units, and vice versa!
       io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2] });
       io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1] });
     }
@@ -50,7 +52,6 @@ export function socketHandler(io, socket, roomManager) {
   // --- COMBAT RELAY ---
   socket.on("combat_action", (data) => {
     const { roomId } = data;
-    // Broadcast the exact move to the opponent
     socket.to(roomId).emit("combat_action_received", data);
   });
 

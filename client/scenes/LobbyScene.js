@@ -60,7 +60,13 @@ export class LobbyScene extends Phaser.Scene {
 
         startBtn.setInteractive({ useHandCursor: true });
         startBtn.on('pointerdown', () => {
-            this.scene.start('GameScene', { playerTeam: this.selectedTeam });
+
+            // 2. USE FE2's API! Send the drafted team to the server
+            sendTeam(this.selectedTeam);
+
+            // Grey out the button so the player knows they are waiting for the opponent
+            startBtn.setFillStyle(0x555555);
+            startBtn.disableInteractive();
         });
     }
 }

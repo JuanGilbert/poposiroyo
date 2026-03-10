@@ -1,4 +1,4 @@
-import { SocketManager } from '../network/SocketManager.js';
+import * as SocketManager from '../network/SocketManager.js';
 
 export class PlacementManager {
     constructor(scene) {
