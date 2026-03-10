@@ -32,12 +32,21 @@ export class PlacementManager {
 
         if (this.placementTimer) this.placementTimer.remove();
 
-        // Hide UI via the manager
         this.scene.ui.hidePlacementUI();
         this.scene.clearHighlights();
 
-        // CHANGE THIS: Tell the Combat Manager to take over!
-        this.scene.combatManager.start();
+        // 2. Change the state to waiting
+        this.scene.gameState = 'WAITING_FOR_OPPONENT';
+
+        // 3. Tell the server we are ready to start!
+        // Your server currently listens for "start_game" (from your socketHandler.js)
+        SocketManager.emit("start_game", this.scene.roomId);
+
+        // 4. Wait for the server to confirm BOTH players are ready
+        SocketManager.on("game_started", () => {
+            SocketManager.off("game_started"); // clean up listener
+            this.scene.combatManager.start();  // NOW we start combat!
+        });
     }
 
     handleClick(cell) {

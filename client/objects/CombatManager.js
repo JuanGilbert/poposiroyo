@@ -1,11 +1,37 @@
 import Phaser from 'phaser';
+import { SocketManager } from '../network/SocketManager.js'; // <-- Import Sockets
 
 export class CombatManager {
     constructor(scene) {
-        this.scene = scene; // Keep a reference to the main GameScene
+        this.scene = scene;
         this.turnQueue = [];
         this.generalTurnCount = 0;
         this.currentUnit = null;
+        this.setupSocketListeners(); // Listen for opponent moves!
+    }
+
+    setupSocketListeners() {
+        // When the server tells us someone attacked!
+        SocketManager.on("attack_result", (data) => {
+            const { attacker, x, y } = data;
+
+            // Check if the attack came from the opponent
+            if (attacker !== SocketManager.get().id) {
+                console.log(`Opponent attacked at Col: ${x}, Row: ${y}`);
+
+                // Pan camera to player board to watch the hit
+                this.scene.cameras.main.pan(this.scene.scale.width / 2, this.scene.scale.height / 2, 600, 'Power2');
+                this.scene.isLookingAtEnemy = false;
+
+                // Apply the hit visually to the Player's board
+                const targetCell = this.scene.playerBoard.grid[y][x];
+                targetCell.isHit = true;
+                targetCell.baseSquare.setFillStyle(0xff9900); // Just a generic hit visual for now
+
+                // Move to the next turn!
+                this.scene.time.delayedCall(1000, () => this.startNextTurn());
+            }
+        });
     }
 
     start() {
@@ -18,6 +44,18 @@ export class CombatManager {
         if (this.scene.playerActionState === 'ATTACKING') {
             if (!cell.isEnemyBoard) return;
 
+            // 1. Instantly hide UI to prevent double-clicking
+            this.scene.ui.setActionMenuVisible(false);
+
+            // 2. Instead of calculating damage locally, TELL THE SERVER!
+            // Send the column (x) and row (y) we clicked on
+            SocketManager.emit("attack", {
+                roomId: this.scene.roomId,
+                x: cell.col,
+                y: cell.row
+            });
+
+            // 3. We also apply the visual damage to our local screen instantly for a snappy feel
             const unit = this.currentUnit;
             const hideFogTurn = this.generalTurnCount + 4;
 
@@ -40,10 +78,11 @@ export class CombatManager {
                 }
             });
 
-            this.scene.ui.setActionMenuVisible(false);
+            // Wait for the server before advancing the turn
             this.startNextTurn();
 
         } else if (this.scene.playerActionState === 'MOVING') {
+            // (We will wire up Movement to the server in the exact same way next!)
             if (cell.isEnemyBoard) return;
 
             const startCoord = this.currentUnit.coordinates[0];
@@ -98,26 +137,13 @@ export class CombatManager {
             this.scene.playerActionState = null;
             this.scene.ui.setActionMenuVisible(true);
         } else {
+            // IT IS THE ENEMY'S TURN!
             this.scene.gameState = 'ENEMY_TURN';
             this.scene.ui.setActionMenuVisible(false);
-            this.scene.time.delayedCall(1200, () => this.fakeEnemyTurn());
+
+            // NOTICE: fakeEnemyTurn() is GONE!
+            // We literally do nothing and wait for setupSocketListeners() to hear the opponent's attack.
+            console.log("Waiting for opponent to move...");
         }
-    }
-
-    fakeEnemyTurn() {
-        const randomRow = Phaser.Math.Between(0, 9);
-        const randomCol = Phaser.Math.Between(0, 9);
-        const targetCell = this.scene.playerBoard.grid[randomRow][randomCol];
-
-        if (targetCell.isHit) {
-            this.fakeEnemyTurn();
-            return;
-        }
-
-        targetCell.isHit = true;
-        targetCell.baseSquare.setFillStyle(0xff9900);
-        this.scene.cameras.main.pan(this.scene.scale.width / 2, this.scene.scale.height / 2, 600, 'Power2');
-        this.scene.isLookingAtEnemy = false;
-        this.startNextTurn();
     }
 }
