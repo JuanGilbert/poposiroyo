@@ -1,25 +1,41 @@
 import { io } from 'socket.io-client';
 
-class SocketManagerClass {
-  constructor() { this._socket = null; }
+let _socket = null;
 
-  connect() {
-    if (this._socket && this._socket.connected) return this._socket;
+export function connect() {
+  if (_socket && _socket.connected) return _socket;
 
-    // Uses your live server URL if built, otherwise defaults to localhost for testing!
-    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
-    this._socket = io(serverUrl);
+  const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+  _socket = io(serverUrl);
 
-    this._socket.on('connect', () => console.log(`[SocketManager] Connected to: ${serverUrl}`));
-    return this._socket;
-  }
+  console.log('[SocketManager] Terhubung ke server');
+  return _socket;
+}
 
-  get() { return this._socket; }
-  emit(event, data) { if (this._socket) this._socket.emit(event, data); }
-  on(event, callback) { if (this._socket) this._socket.on(event, callback); }
-  off(event) { if (this._socket) this._socket.off(event); }
-  disconnect() {
-    if (this._socket) { this._socket.disconnect(); this._socket = null; }
+export function get() { return _socket; }
+
+export function emit(event, data) {
+  if (!_socket) { console.warn('[SocketManager] Socket belum connect'); return; }
+  _socket.emit(event, data);
+}
+
+export function on(event, callback) {
+  if (!_socket) { console.warn('[SocketManager] Socket belum connect'); return; }
+  _socket.on(event, callback);
+}
+
+export function off(event) {
+  if (!_socket) return;
+  _socket.off(event);
+}
+
+export function isConnected() {
+  return _socket && _socket.connected;
+}
+
+export function disconnect() {
+  if (_socket) {
+    _socket.disconnect();
+    _socket = null;
   }
 }
-export const SocketManager = new SocketManagerClass();
