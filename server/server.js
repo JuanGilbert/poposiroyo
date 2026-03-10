@@ -5,64 +5,97 @@ import { Server } from "socket.io"
 import { socketHandler } from "./sockets/socketHandler.js"
 import { RoomManager } from "./rooms/RoomManager.js"
 
+import fs from "fs"
+import path from "path"
+import { fileURLToPath } from "url"
+
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+
 const app = express()
+
 app.use(express.json())
 
 const server = http.createServer(app)
 
-const io = new Server(server, {
-  cors: {
-    origin: "*"
+const io = new Server(server,{
+  cors:{
+    origin:"*"
   }
 })
 
+
+
 /*
 ========================
-ROOM MANAGER INSTANCE
+ROOM MANAGER
 ========================
 */
+
 const roomManager = new RoomManager()
 
+
+
 /*
 ========================
-LEADERBOARD (temporary)
+TEMP LEADERBOARD
 ========================
 */
+
 const leaderboard = []
 
+
+
 /*
 ========================
-HTTP API
+SERVER STATUS
 ========================
 */
 
-app.get("/status", (req, res) => {
+app.get("/status",(req,res)=>{
+
   res.json({
-    status: "Server running",
-    rooms: roomManager.getRoomCount()
+    status:"Server running",
+    rooms:roomManager.getRoomCount()
   })
+
 })
 
-app.get("/leaderboard", (req, res) => {
+
+
+/*
+========================
+LEADERBOARD
+========================
+*/
+
+app.get("/leaderboard",(req,res)=>{
+
   res.json({
     leaderboard
   })
+
 })
 
-app.post("/score", (req, res) => {
 
-  const { player, score } = req.body
+app.post("/score",(req,res)=>{
 
-  if (!player || score === undefined) {
+  const {player,score} = req.body
+
+  if(!player || score === undefined){
+
     return res.status(400).json({
-      error: "player and score required"
+      error:"player and score required"
     })
+
   }
 
   leaderboard.push({
     player,
     score,
-    time: Date.now()
+    time:Date.now()
   })
 
   leaderboard.sort((a,b)=>b.score-a.score)
@@ -71,13 +104,56 @@ app.post("/score", (req, res) => {
     success:true,
     leaderboard
   })
+
 })
 
-app.get("/rooms", (req,res)=>{
+
+
+/*
+========================
+ROOM LIST
+========================
+*/
+
+app.get("/rooms",(req,res)=>{
+
   res.json({
-    rooms: roomManager.getRooms()
+    rooms:roomManager.getRooms()
   })
+
 })
+
+
+
+/*
+========================
+GAME CONFIG ENDPOINT
+========================
+*/
+
+app.get("/game-config",(req,res)=>{
+
+  const configPath = path.join(__dirname,"../client/public/game-config.json")
+
+  try{
+
+    const config = JSON.parse(
+      fs.readFileSync(configPath,"utf8")
+    )
+
+    res.json(config)
+
+  }catch(err){
+
+    res.status(500).json({
+      error:"Failed to load game config"
+    })
+
+  }
+
+})
+
+
 
 /*
 ========================
@@ -86,8 +162,14 @@ SOCKET CONNECTION
 */
 
 io.on("connection",(socket)=>{
-  socketHandler(io, socket, roomManager)
+
+  console.log("Player connected:",socket.id)
+
+  socketHandler(io,socket,roomManager)
+
 })
+
+
 
 /*
 ========================
@@ -98,5 +180,7 @@ START SERVER
 const PORT = 3000
 
 server.listen(PORT,()=>{
+
   console.log(`Server running on port ${PORT}`)
+
 })

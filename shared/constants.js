@@ -1,41 +1,25 @@
-// utils/Constants.js
+// shared/constants.js
 
-// ukuran board game
-export const BOARD_ROWS = 10
-export const BOARD_COLS = 10
+const GAME_STATE = {
+    WAITING: 'waiting',
+    PLAYING: 'playing',
+    FINISHED: 'finished'
+};
 
-// ukuran tile (pixel)
-export const TILE_SIZE = 64
+const TILE_STATE = {
+    EMPTY: 0,
+    SHIP: 1,
+    HIT: 2,
+    MISS: 3
+};
 
+const PLAYER_ROLE = {
+    PLAYER1: 'player1',
+    PLAYER2: 'player2'
+};
 
-// player identifier
-export const PLAYER = {
-  ONE: "player1",
-  TWO: "player2"
-}
-
-
-// fase permainan
-export const GAME_PHASE = {
-  WAITING: "waiting",
-  PLACEMENT: "placement",
-  PLAYING: "playing",
-  RESULT: "result"
-}
-
-
-// tipe aksi dalam game
-export const ACTION_TYPE = {
-  MOVE: "move",
-  ATTACK: "attack",
-  REVEAL: "reveal"
-}
-
-
-// direction movement (grid)
-export const DIRECTIONS = [
-  { r: -1, c: 0 }, // atas
-  { r: 1, c: 0 },  // bawah
-  { r: 0, c: -1 }, // kiri
-  { r: 0, c: 1 }   // kanan
-]
+module.exports = {
+    GAME_STATE,
+    TILE_STATE,
+    PLAYER_ROLE
+};
