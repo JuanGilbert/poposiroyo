@@ -1,122 +1,90 @@
 // ─────────────────────────────────────────────
-//  Helpers.js — Fungsi utilitas umum
-//  Front End 2: Game Logic Client
+//  Helpers.js — Fungsi utilitas FE2
+//  BERSIH dari DOM — semua pakai Phaser events
+//  Visual ditangani FE1, FE2 hanya emit event
 // ─────────────────────────────────────────────
 
-const Helpers = (() => {
+import { BOARD_ROWS, BOARD_COLS } from './Constants.js';
 
-  // ── Konversi index → koordinat (misal: 0 → A1, 11 → B2) ──
-  function idxToCoord(idx) {
-    const col = Constants.COLS_LABEL[idx % Constants.GRID_COLS];
-    const row = Constants.ROWS_LABEL[Math.floor(idx / Constants.GRID_COLS)];
-    return col + row;
+// ── Emit toast ke FE1 via Phaser events ───────
+// FE1 listen: scene.events.on('showToast', ...)
+export function showToast(scene, msg, duration = 2000) {
+  if (scene && scene.events) {
+    scene.events.emit('showToast', { msg, duration });
   }
+}
 
-  // ── Konversi koordinat → index (misal: "A1" → 0) ──
-  function coordToIdx(coord) {
-    const col = Constants.COLS_LABEL.indexOf(coord[0].toUpperCase());
-    const row = parseInt(coord.slice(1)) - 1;
-    if (col < 0 || row < 0) return -1;
-    return row * Constants.GRID_COLS + col;
+// ── Emit log ke FE1 via Phaser events ─────────
+// FE1 listen: scene.events.on('addLog', ...)
+export function addLog(scene, msg, cls = '') {
+  if (scene && scene.events) {
+    scene.events.emit('addLog', { msg, cls });
   }
+}
 
-  // ── Dapatkan semua index yang ditempati kapal ──
-  // startIdx: index awal, size: panjang kapal, horizontal: arah
-  function getShipCells(startIdx, size, horizontal) {
-    const cells = [];
-    const col   = startIdx % Constants.GRID_COLS;
-    const row   = Math.floor(startIdx / Constants.GRID_COLS);
+// ── Cek koordinat valid ───────────────────────
+export function isValidCoord(row, col) {
+  return row >= 0 && row < BOARD_ROWS &&
+         col >= 0 && col < BOARD_COLS;
+}
 
-    for (let i = 0; i < size; i++) {
-      if (horizontal) {
-        if (col + i >= Constants.GRID_COLS) return null; // keluar batas
-        cells.push(startIdx + i);
-      } else {
-        if (row + i >= Constants.GRID_ROWS) return null; // keluar batas
-        cells.push(startIdx + i * Constants.GRID_COLS);
-      }
-    }
-    return cells;
+// ── Hitung jarak Manhattan ────────────────────
+// Dari GameScene FE1:
+// Math.abs(cell.row - startCoord.row) + Math.abs(cell.col - startCoord.col)
+export function getManhattanDistance(coord1, coord2) {
+  return Math.abs(coord1.row - coord2.row) +
+         Math.abs(coord1.col - coord2.col);
+}
+
+// ── Hitung footprint unit ─────────────────────
+// Dari GameScene FE1 spawnPlayerTeam:
+// for (let i = 0; i < blueprint.tileSize; i++)
+//   footprint.push({ row: currentRow + i, col: 1 })
+export function getUnitFootprint(startRow, startCol, tileSize) {
+  const footprint = [];
+  for (let i = 0; i < tileSize; i++) {
+    footprint.push({ row: startRow + i, col: startCol });
   }
+  return footprint;
+}
 
-  // ── Validasi posisi kapal (tidak bertabrakan, tidak keluar batas) ──
-  function isValidPlacement(board, cells) {
-    if (!cells) return false;
-    return cells.every(idx => board[idx] === undefined);
-  }
+// ── Hitung sel yang terkena attack ───────────
+// Dari GameScene FE1 handleBattleClick attackOffsets:
+// unit.attackOffsets.forEach(offset => {
+//   const r = cell.row + offset.r
+//   const c = cell.col + offset.c
+// })
+export function getAttackCells(originRow, originCol, attackOffsets) {
+  const cells = [];
+  attackOffsets.forEach(offset => {
+    const r = originRow + offset.r;
+    const c = originCol + offset.c;
+    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
+  });
+  return cells;
+}
 
-  // ── Generate penempatan kapal secara acak ──
-  function autoPlaceShips() {
-    const board = new Array(100).fill(undefined);
+// ── Hitung sel yang ter-reveal ────────────────
+// Dari GameScene FE1 handleBattleClick revealOffsets:
+// unit.revealOffsets.forEach(offset => { ... })
+export function getRevealCells(originRow, originCol, revealOffsets) {
+  const cells = [];
+  revealOffsets.forEach(offset => {
+    const r = originRow + offset.r;
+    const c = originCol + offset.c;
+    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
+  });
+  return cells;
+}
 
-    for (let s = 0; s < Constants.SHIPS.length; s++) {
-      const ship = Constants.SHIPS[s];
-      let placed = false;
-      let tries  = 0;
+// ── Sort unit berdasarkan speed ───────────────
+// Dari GameScene FE1 buildTurnQueue:
+// this.turnQueue.sort((a, b) => b.speed - a.speed)
+export function sortBySpeed(units) {
+  return [...units].sort((a, b) => b.speed - a.speed);
+}
 
-      while (!placed && tries < 500) {
-        tries++;
-        const horizontal = Math.random() > 0.5;
-        const startIdx   = Math.floor(Math.random() * 100);
-        const cells      = getShipCells(startIdx, ship.size, horizontal);
-
-        if (isValidPlacement(board, cells)) {
-          cells.forEach(idx => { board[idx] = ship.id; });
-          placed = true;
-        }
-      }
-
-      if (!placed) {
-        console.warn(`[Helpers] Gagal menempatkan kapal ${ship.name}`);
-        return null;
-      }
-    }
-
-    return board;
-  }
-
-  // ── Tampilkan toast notifikasi ──
-  function showToast(msg, duration = 2500) {
-    const el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), duration);
-  }
-
-  // ── Tambah log ke battle log ──
-  function addLog(msg, cssClass = '') {
-    const log = document.getElementById('battle-log');
-    if (!log) return;
-    const line = document.createElement('div');
-    line.className = 'log-line ' + cssClass;
-    line.textContent = msg;
-    log.prepend(line);
-    // Batasi 20 baris
-    while (log.children.length > 20) log.removeChild(log.lastChild);
-  }
-
-  // ── Deep clone object ──
-  function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-
-  // ── Format waktu (ms → "12s") ──
-  function formatCountdown(ms) {
-    return Math.max(0, Math.floor(ms / 1000)) + 's';
-  }
-
-  return {
-    idxToCoord,
-    coordToIdx,
-    getShipCells,
-    isValidPlacement,
-    autoPlaceShips,
-    showToast,
-    addLog,
-    clone,
-    formatCountdown,
-  };
-})();
-
-if (typeof module !== 'undefined') module.exports = Helpers;
+// ── Format HP ─────────────────────────────────
+export function formatHP(current, max) {
+  return `${current}/${max}`;
+}
