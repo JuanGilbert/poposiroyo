@@ -1,21 +1,14 @@
-// ─────────────────────────────────────────────
-//  NetworkEvents.js — Semua event socket
-// ─────────────────────────────────────────────
 
 import { on, emit }                from './SocketManager.js';
 import { EVENTS, REMATCH_TIMEOUT } from '../utils/Constants.js';
-import { showToast }               from '../utils/Helpers.js';
 
-// ─────────────────────────────────────────────
-//  INIT — Daftarkan semua listener
-// ─────────────────────────────────────────────
+
 export function initNetworkEvents(sceneRef) {
-  // Koneksi
-  on('connect',    () => _onConnect());
-  on('disconnect', () => _onDisconnect());
+  on('connect',    () => _onConnect(sceneRef));
+  on('disconnect', () => _onDisconnect(sceneRef));
 
   // Matchmaking & Room
-  on(EVENTS.MATCHMAKING_SEARCH, ({ inQueue }) => _onMatchmakingSearching(inQueue));
+  on(EVENTS.MATCHMAKING_SEARCH, (data) => _onMatchmakingSearching(data, sceneRef));
   on(EVENTS.MATCH_FOUND,        (data) => _onMatchFound(data, sceneRef));
   on(EVENTS.ROOM_CREATED,       (data) => _onRoomCreated(data, sceneRef));
   on(EVENTS.ROOM_JOINED,        (data) => _onRoomJoined(data, sceneRef));
@@ -38,133 +31,129 @@ export function initNetworkEvents(sceneRef) {
   // Keluar
   on(EVENTS.OPPONENT_LEFT, ()     => _onOpponentLeft(sceneRef));
   on(EVENTS.OPPONENT_DC,   (data) => _onOpponentDisconnected(data, sceneRef));
-  on(EVENTS.ERROR_MSG,     (msg)  => showToast('⚠ ' + msg, 3000));
+  on(EVENTS.ERROR_MSG,     (msg)  => _emitToScene(sceneRef, 'showToast', { msg, duration: 3000 }));
 
   console.log('[NetworkEvents] Semua listener terdaftar');
 }
 
 // ─────────────────────────────────────────────
-//  HANDLERS — Terima dari server
+//  HELPER — emit ke GameScene FE1
+//  FE1 listen via: this.events.on('namaEvent', ...)
+// ─────────────────────────────────────────────
+function _emitToScene(scene, eventName, data) {
+  if (scene && scene.events) {
+    scene.events.emit(eventName, data);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  HANDLERS
 // ─────────────────────────────────────────────
 
-function _onConnect() {
+function _onConnect(scene) {
   console.log('[NetworkEvents] Socket terhubung');
-  // TODO: update UI status koneksi — tunggu FE1
+  _emitToScene(scene, 'socketConnected');
 }
 
-function _onDisconnect() {
+function _onDisconnect(scene) {
   console.warn('[NetworkEvents] Terputus');
-  showToast('KONEKSI TERPUTUS — REFRESH HALAMAN', 4000);
+  _emitToScene(scene, 'showToast', { msg: 'KONEKSI TERPUTUS — REFRESH HALAMAN', duration: 4000 });
 }
 
-function _onMatchmakingSearching(inQueue) {
-  // TODO: update antrian UI — tunggu FE1
-  const el = document.getElementById('queue-count');
-  if (el) el.textContent = `${inQueue} PEMAIN MENUNGGU`;
+function _onMatchmakingSearching({ inQueue }, scene) {
+  _emitToScene(scene, 'matchmakingSearching', { inQueue });
 }
 
-function _onMatchFound({ code, score }, scene) {
-  showToast('⚡ LAWAN DITEMUKAN!', 2000);
-  if (score && scene) scene.setMyScore(score);
-  // TODO: navigasi ke team select / placement — tunggu FE1
-  // scene.scene.start('LobbyScene', { code })
+function _onMatchFound(data, scene) {
+  _emitToScene(scene, 'matchFound', data);
 }
 
-function _onRoomCreated({ code }, scene) {
-  // TODO: tampilkan kode room — tunggu FE1
+function _onRoomCreated(data, scene) {
+  _emitToScene(scene, 'roomCreated', data);
 }
 
-function _onRoomJoined({ code }, scene) {
-  // TODO: masuk lobby — tunggu FE1
+function _onRoomJoined(data, scene) {
+  _emitToScene(scene, 'roomJoined', data);
 }
 
 function _onOpponentJoined(scene) {
-  // TODO: update slot lawan — tunggu FE1
+  _emitToScene(scene, 'opponentJoined');
 }
 
 function _onTeamConfirmed(scene) {
-  // Ganti dari _onBoardConfirmed
-  // TODO: pindah ke waiting screen — tunggu FE1
-  // scene.scene.start('WaitingScene')
+  _emitToScene(scene, 'teamConfirmed');
 }
 
 function _onGameStart(data, scene) {
-  // data berisi: { yourTurn, playerTeam, enemyTeam (samar) }
-  if (scene) scene.onGameStart(data);
+  // Langsung panggil method GameScene FE2
+  if (scene && scene.onGameStart) scene.onGameStart(data);
 }
 
 function _onActionResult(data, scene) {
-  // data berisi: { type: 'MOVE'|'ATTACK', unitId, ... }
-  if (scene) scene.onActionResult(data);
+  if (scene && scene.onActionResult) scene.onActionResult(data);
 }
 
 function _onUnitDamaged(data, scene) {
-  // data berisi: { unitId, remainingHp, isPlayerUnit }
-  if (scene) scene.onUnitDamaged(data);
+  if (scene && scene.onUnitDamaged) scene.onUnitDamaged(data);
 }
 
 function _onUnitDied(data, scene) {
-  // data berisi: { unitId, isPlayerUnit }
-  if (scene) scene.onUnitDied(data);
+  if (scene && scene.onUnitDied) scene.onUnitDied(data);
 }
 
 function _onTurnChange(data, scene) {
-  // data berisi: { currentUnitId, isPlayerTurn, turnQueue }
-  if (scene) scene.onTurnChange(data);
+  if (scene && scene.onTurnChange) scene.onTurnChange(data);
 }
 
 function _onGameOver(data, scene) {
-  if (scene) scene.onGameOver(data);
+  if (scene && scene.onGameOver) scene.onGameOver(data);
 }
 
 function _onOpponentRematch(data, scene) {
-  if (scene) scene.onOpponentRematchResponse(data);
+  if (scene && scene.onOpponentRematchResponse) scene.onOpponentRematchResponse(data);
 }
 
-function _onRematchStart({ score }, scene) {
-  if (score && scene) scene.setMyScore(score);
-  showToast('⚔️ TANDING ULANG!', 1500);
-  // TODO: restart ke team select — tunggu FE1
+function _onRematchStart(data, scene) {
+  _emitToScene(scene, 'rematchStart', data);
 }
 
 function _onRematchDeclined(scene) {
-  showToast('🔍 MENCARI LAWAN BARU...', 2000);
-  // TODO: ke quick match — tunggu FE1
+  _emitToScene(scene, 'rematchDeclined');
 }
 
 function _onOpponentLeft(scene) {
-  showToast('LAWAN MENINGGALKAN PERTANDINGAN', 3000);
-  // TODO: kembali ke menu — tunggu FE1
+  _emitToScene(scene, 'opponentLeft');
 }
 
-function _onOpponentDisconnected({ score }, scene) {
-  if (score && scene) scene.setMyScore(score);
-  if (scene) scene.onGameOver({
-    won: true, score, reason: 'disconnect', rematchTimeout: REMATCH_TIMEOUT
-  });
+function _onOpponentDisconnected(data, scene) {
+  if (scene && scene.onGameOver) {
+    scene.onGameOver({
+      won: true,
+      score: data.score,
+      reason: 'disconnect',
+      rematchTimeout: REMATCH_TIMEOUT,
+    });
+  }
 }
 
 // ─────────────────────────────────────────────
 //  EMITTERS — Kirim ke server
-//  UPDATE: sendBoard → sendTeam, sendFire → sendAction
 // ─────────────────────────────────────────────
+export function sendCreateRoom()       { emit(EVENTS.CREATE_ROOM); }
+export function sendJoinRoom(code)     { emit(EVENTS.JOIN_ROOM,       { code }); }
+export function sendQuickMatch()       { emit(EVENTS.QUICK_MATCH); }
+export function sendCancelMatchmaking(){ emit(EVENTS.CANCEL_MATCHMAKING); }
 
-export function sendCreateRoom()        { emit(EVENTS.CREATE_ROOM); }
-export function sendJoinRoom(code)      { emit(EVENTS.JOIN_ROOM,    { code }); }
-export function sendQuickMatch()        { emit(EVENTS.QUICK_MATCH); }
-export function sendCancelMatchmaking() { emit(EVENTS.CANCEL_MATCHMAKING); }
-
-// Ganti sendBoard → sendTeam: kirim pilihan karakter
-// data: { teamChoices: ['Assassin', 'Mage', 'Paladin'] }
+// Kirim pilihan tim karakter ke server
 export function sendTeam(teamChoices) {
   emit(EVENTS.TEAM_READY, { teamChoices });
 }
 
-// Ganti sendFire → sendAction: kirim MOVE atau ATTACK
-// data: { type: 'MOVE'|'ATTACK', unitId, targetRow, targetCol }
-export function sendAction(type, unitId, targetRow, targetCol) {
-  emit(EVENTS.PLAYER_ACTION, { type, unitId, targetRow, targetCol });
+// Kirim action MOVE atau ATTACK ke server
+// Dari GameScene FE1 handleBattleClick
+export function sendAction(type, unitName, targetRow, targetCol) {
+  emit(EVENTS.PLAYER_ACTION, { type, unitName, targetRow, targetCol });
 }
 
-export function sendSurrender()              { emit(EVENTS.SURRENDER); }
-export function sendRematchResponse(answer)  { emit(EVENTS.REMATCH_RESPONSE, { answer }); }
+export function sendSurrender()             { emit(EVENTS.SURRENDER); }
+export function sendRematchResponse(answer) { emit(EVENTS.REMATCH_RESPONSE, { answer }); }

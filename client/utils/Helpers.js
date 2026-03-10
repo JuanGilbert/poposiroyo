@@ -1,52 +1,45 @@
 // ─────────────────────────────────────────────
-//  Helpers.js — Fungsi utilitas umum
+//  Helpers.js — Fungsi utilitas FE2
+//  BERSIH dari DOM — semua pakai Phaser events
+//  Visual ditangani FE1, FE2 hanya emit event
+// ─────────────────────────────────────────────
 
+import { BOARD_ROWS, BOARD_COLS } from './Constants.js';
 
-import { GRID_ROWS, GRID_COLS } from './Constants.js';
-
-// ── Toast notifikasi ──────────────────────────
-// Sama seperti sebelumnya
-export function showToast(msg, duration = 2000) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+// ── Emit toast ke FE1 via Phaser events ───────
+// FE1 listen: scene.events.on('showToast', ...)
+export function showToast(scene, msg, duration = 2000) {
+  if (scene && scene.events) {
+    scene.events.emit('showToast', { msg, duration });
+  }
 }
 
-// ── Battle log ────────────────────────────────
-export function addLog(msg, cls = '') {
-  const log = document.getElementById('battle-log');
-  if (!log) return;
-  const div = document.createElement('div');
-  div.className   = 'log-entry ' + cls;
-  div.textContent = msg;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+// ── Emit log ke FE1 via Phaser events ─────────
+// FE1 listen: scene.events.on('addLog', ...)
+export function addLog(scene, msg, cls = '') {
+  if (scene && scene.events) {
+    scene.events.emit('addLog', { msg, cls });
+  }
 }
 
-// ── Koordinat {row, col} → string "R2C5" ──────
-// Ganti idxToCoord karena sistem sekarang pakai {row, col}
-// bukan index 0-99
-export function coordToString({ row, col }) {
-  return `R${row}C${col}`;
-}
-
-// ── Cek apakah koordinat valid di dalam grid ──
+// ── Cek koordinat valid ───────────────────────
 export function isValidCoord(row, col) {
-  return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS;
+  return row >= 0 && row < BOARD_ROWS &&
+         col >= 0 && col < BOARD_COLS;
 }
 
-// ── Hitung jarak Manhattan antar dua koordinat ──
-// Dipakai untuk validasi move range
-// Dari GameScene: Math.abs(cell.row - startCoord.row) + Math.abs(cell.col - startCoord.col)
+// ── Hitung jarak Manhattan ────────────────────
+// Dari GameScene FE1:
+// Math.abs(cell.row - startCoord.row) + Math.abs(cell.col - startCoord.col)
 export function getManhattanDistance(coord1, coord2) {
-  return Math.abs(coord1.row - coord2.row) + Math.abs(coord1.col - coord2.col);
+  return Math.abs(coord1.row - coord2.row) +
+         Math.abs(coord1.col - coord2.col);
 }
 
-// ── Hitung footprint unit (koordinat yang ditempati) ──
-// Dari GameScene spawnPlayerTeam: footprint berdasarkan tileSize secara vertikal
+// ── Hitung footprint unit ─────────────────────
+// Dari GameScene FE1 spawnPlayerTeam:
+// for (let i = 0; i < blueprint.tileSize; i++)
+//   footprint.push({ row: currentRow + i, col: 1 })
 export function getUnitFootprint(startRow, startCol, tileSize) {
   const footprint = [];
   for (let i = 0; i < tileSize; i++) {
@@ -55,41 +48,43 @@ export function getUnitFootprint(startRow, startCol, tileSize) {
   return footprint;
 }
 
-// ── Hitung sel yang terkena attack berdasarkan offsets ──
-// Dari GameScene handleBattleClick attackOffsets
+// ── Hitung sel yang terkena attack ───────────
+// Dari GameScene FE1 handleBattleClick attackOffsets:
+// unit.attackOffsets.forEach(offset => {
+//   const r = cell.row + offset.r
+//   const c = cell.col + offset.c
+// })
 export function getAttackCells(originRow, originCol, attackOffsets) {
   const cells = [];
   attackOffsets.forEach(offset => {
     const r = originRow + offset.r;
     const c = originCol + offset.c;
-    if (isValidCoord(r, c)) {
-      cells.push({ row: r, col: c });
-    }
+    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
   });
   return cells;
 }
 
-// ── Hitung sel yang ter-reveal berdasarkan offsets ──
-// Dari GameScene handleBattleClick revealOffsets
+// ── Hitung sel yang ter-reveal ────────────────
+// Dari GameScene FE1 handleBattleClick revealOffsets:
+// unit.revealOffsets.forEach(offset => { ... })
 export function getRevealCells(originRow, originCol, revealOffsets) {
   const cells = [];
   revealOffsets.forEach(offset => {
     const r = originRow + offset.r;
     const c = originCol + offset.c;
-    if (isValidCoord(r, c)) {
-      cells.push({ row: r, col: c });
-    }
+    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
   });
   return cells;
 }
 
-// ── Sort unit berdasarkan speed (untuk turn queue) ──
-// Dari GameScene buildTurnQueue: sort((a,b) => b.speed - a.speed)
+// ── Sort unit berdasarkan speed ───────────────
+// Dari GameScene FE1 buildTurnQueue:
+// this.turnQueue.sort((a, b) => b.speed - a.speed)
 export function sortBySpeed(units) {
   return [...units].sort((a, b) => b.speed - a.speed);
 }
 
-// ── Format HP display ─────────────────────────
+// ── Format HP ─────────────────────────────────
 export function formatHP(current, max) {
   return `${current}/${max}`;
 }
