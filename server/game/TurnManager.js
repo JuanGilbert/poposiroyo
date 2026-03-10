@@ -1,7 +1,7 @@
-class TurnManager {
+export default class TurnManager {
 
-    constructor(startPlayer = "p1") {
-        this.currentTurn = startPlayer;
+    constructor() {
+        this.currentTurn = "p1";
     }
 
     getTurn() {
@@ -11,7 +11,4 @@ class TurnManager {
     switchTurn() {
         this.currentTurn = this.currentTurn === "p1" ? "p2" : "p1";
     }
-
 }
-
-module.exports = TurnManager;

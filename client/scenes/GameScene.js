@@ -14,6 +14,8 @@ export class GameScene extends Phaser.Scene {
 
     init(data) {
         this.playerTeamChoices = data.playerTeam || ['Assassin', 'Mage', 'Paladin'];
+        this.roomId = data.roomId; // <-- Save the Room ID!
+        this.gameMode = data.gameMode;
     }
 
     create() {
