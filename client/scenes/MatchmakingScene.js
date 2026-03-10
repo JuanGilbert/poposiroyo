@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import * as SocketManager from '../network/SocketManager.js';
-
+import { sendQuickMatch, sendCancelMatchmaking, initNetworkEvents } from '../network/NetworkEvents.js';
 
 export class MatchmakingScene extends Phaser.Scene {
     constructor() {
@@ -11,6 +11,9 @@ export class MatchmakingScene extends Phaser.Scene {
     create() {
         // 2. Connect to the server as soon as they enter the matchmaking screen
         SocketManager.connect();
+
+        // Initialize network listeners so the scene can hear "match_found"
+        initNetworkEvents(this);
 
         const screenWidth = this.scale.width;
         const screenHeight = this.scale.height;
@@ -41,9 +44,8 @@ export class MatchmakingScene extends Phaser.Scene {
             this.searchingUIElements.forEach(el => el.setVisible(true));
             this.isSearching = true;
 
-            // FE1 FIX: Trigger FE2's matchmaking logic!
+            // Trigger server matchmaking logic
             sendQuickMatch();
-            // (_onMatchFound in NetworkEvents will automatically handle the scene transition)
         });
 
         cancelBtn.on('pointerdown', () => {

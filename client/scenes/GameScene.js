@@ -44,7 +44,6 @@ export class GameScene extends Phaser.Scene {
         // 3. SPAWN UNITS
         this.activeUnits = [];
         this.spawnPlayerTeam();
-        spawnEnemyTeam()
 
         this.events.on('cellClicked', (clickedCell) => {
             this.handleCellClicked(clickedCell);

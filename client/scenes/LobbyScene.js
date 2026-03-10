@@ -1,8 +1,14 @@
 import Phaser from 'phaser';
+import { sendTeam } from '../network/NetworkEvents.js';
 
 export class LobbyScene extends Phaser.Scene {
     constructor() {
         super('LobbyScene');
+    }
+
+    // 1. ADD THIS TO CATCH THE ROOM ID FROM MATCHMAKING
+    init(data) {
+        this.roomId = data.roomId;
     }
 
     create() {
@@ -12,7 +18,6 @@ export class LobbyScene extends Phaser.Scene {
         this.selectedTeam = [];
         this.maxTeamSize = 3;
 
-        // --- MENGAMBIL DATA DARI MEMORI GLOBAL (CMS) ---
         const gameConfig = this.registry.get('gameConfig');
         const CHARACTER_DATA = gameConfig.characters;
         const characterNames = Object.keys(CHARACTER_DATA);
@@ -61,10 +66,9 @@ export class LobbyScene extends Phaser.Scene {
         startBtn.setInteractive({ useHandCursor: true });
         startBtn.on('pointerdown', () => {
 
-            // 2. USE FE2's API! Send the drafted team to the server
-            sendTeam(this.selectedTeam);
+            // 2. PASS 'this' SO THE NETWORK EVENT MANAGER CAN USE IT
+            sendTeam(this.selectedTeam, this);
 
-            // Grey out the button so the player knows they are waiting for the opponent
             startBtn.setFillStyle(0x555555);
             startBtn.disableInteractive();
         });

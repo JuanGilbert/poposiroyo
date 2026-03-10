@@ -1,13 +1,11 @@
-
 import { on, emit }                from './SocketManager.js';
 import { EVENTS, REMATCH_TIMEOUT } from '../utils/Constants.js';
-
+import { showToast }               from '../utils/Helpers.js';
 
 export function initNetworkEvents(sceneRef) {
-  on('connect',    () => _onConnect());
-  on('disconnect', () => _onDisconnect());
+  on('connect',    () => _onConnect(sceneRef));
+  on('disconnect', () => _onDisconnect(sceneRef));
 
-  // FIX: Use exact strings to match socketHandler.js!
   on('match_found',        (data) => _onMatchFound(data, sceneRef));
   on('room_created',       (data) => _onRoomCreated(data, sceneRef));
   on('player_joined',      (data) => _onRoomJoined(data, sceneRef));
@@ -22,8 +20,7 @@ export function initNetworkEvents(sceneRef) {
 }
 
 // ─────────────────────────────────────────────
-//  HELPER — emit ke GameScene FE1
-//  FE1 listen via: this.events.on('namaEvent', ...)
+//  HELPER
 // ─────────────────────────────────────────────
 function _emitToScene(scene, eventName, data) {
   if (scene && scene.events) {
@@ -50,9 +47,10 @@ function _onMatchmakingSearching({ inQueue }, scene) {
 }
 
 function _onMatchFound(data, scene) {
-  showToast('⚡ LAWAN DITEMUKAN!', 2000);
+  // Use the imported showToast helper
+  showToast(scene, '⚡ LAWAN DITEMUKAN!', 2000);
 
-  // FIX: Catch data.roomId from the server and pass it to Lobby
+  // Transition to Lobby
   if (scene) {
     scene.scene.start('LobbyScene', { roomId: data.roomId });
   }
@@ -71,7 +69,6 @@ function _onOpponentJoined(scene) {
 }
 
 function _onTeamConfirmed(scene) {
-  // FIX: Pass the room ID to the GameScene so CombatManager can use it
   if (scene) {
     scene.scene.start('GameScene', {
       playerTeam: scene.selectedTeam,
@@ -81,7 +78,6 @@ function _onTeamConfirmed(scene) {
 }
 
 function _onGameStart(data, scene) {
-  // Langsung panggil method GameScene FE2
   if (scene && scene.onGameStart) scene.onGameStart(data);
 }
 
@@ -138,21 +134,21 @@ function _onOpponentDisconnected(data, scene) {
 export function sendCreateRoom()       { emit(EVENTS.CREATE_ROOM); }
 export function sendJoinRoom(code)     { emit(EVENTS.JOIN_ROOM,       { code }); }
 export function sendQuickMatch() {
-  emit("find_match"); // The server listens for "find_match"
+  emit("find_match");
 }
 export function sendCancelMatchmaking() {
   emit("cancel_matchmaking");
 }
 
-// Kirim pilihan tim karakter ke server
-export function sendTeam(teamChoices) {
-  // We will let PlacementManager handle this later,
-  // but we'll leave it here to trigger FE2's confirmed transition for now.
-  _onTeamConfirmed(window.currentSceneRef);
+export function sendTeam(teamChoices, sceneRef) {
+  if (sceneRef) {
+    sceneRef.scene.start('GameScene', {
+      playerTeam: teamChoices,
+      roomId: sceneRef.roomId
+    });
+  }
 }
 
-// Kirim action MOVE atau ATTACK ke server
-// Dari GameScene FE1 handleBattleClick
 export function sendAction(type, unitName, targetRow, targetCol) {
   emit(EVENTS.PLAYER_ACTION, { type, unitName, targetRow, targetCol });
 }
