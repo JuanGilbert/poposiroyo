@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import * as SocketManager from '../network/SocketManager.js';
 
-
 export class CombatManager {
     constructor(scene) {
         this.scene = scene;
@@ -9,7 +8,6 @@ export class CombatManager {
         this.generalTurnCount = 0;
         this.currentUnit = null;
 
-        // Listen for the opponent's moves!
         SocketManager.on("combat_action_received", (data) => this.handleOpponentAction(data));
     }
 
@@ -34,7 +32,7 @@ export class CombatManager {
                 const r = targetCoord.row + offset.r;
                 const c = targetCoord.col + offset.c;
                 if (r >= 0 && r < 10 && c >= 0 && c < 10) {
-                    const hitCell = this.scene.playerBoard.grid[r][c]; // Hitting our board!
+                    const hitCell = this.scene.playerBoard.grid[r][c];
                     if (!hitCell.isHit) hitCell.applyDamage();
                 }
             });
@@ -50,14 +48,12 @@ export class CombatManager {
             if (!cell.isEnemyBoard) return;
             this.scene.ui.setActionMenuVisible(false);
 
-            // Emit to server!
             SocketManager.emit("combat_action", {
                 roomId: this.scene.registry.get('roomId'),
                 actionType: 'ATTACK',
                 targetCoord: { row: cell.row, col: cell.col }
             });
 
-            // Apply locally
             const hideFogTurn = this.generalTurnCount + 4;
             this.currentUnit.revealOffsets.forEach(offset => {
                 const r = cell.row + offset.r; const c = cell.col + offset.c;
@@ -79,7 +75,6 @@ export class CombatManager {
         } else if (this.scene.playerActionState === 'MOVING') {
             if (cell.isEnemyBoard) return;
 
-            // Emit to server!
             SocketManager.emit("combat_action", {
                 roomId: this.scene.registry.get('roomId'),
                 actionType: 'MOVE',
@@ -96,9 +91,21 @@ export class CombatManager {
         }
     }
 
+    // FIX: Deterministic sorting logic with a tie-breaker
     buildTurnQueue() {
         this.turnQueue = [...this.scene.activeUnits].filter(unit => !unit.isDead);
-        this.turnQueue.sort((a, b) => b.speed - a.speed);
+        this.turnQueue.sort((a, b) => {
+            // 1. Sort by speed first
+            if (b.speed !== a.speed) return b.speed - a.speed;
+
+            // 2. Tie-breaker! If speeds are equal, Player 1's unit ALWAYS goes before Player 2's unit.
+            const aIsPlayer1 = this.scene.isPlayer1 ? a.isPlayerUnit : !a.isPlayerUnit;
+            const bIsPlayer1 = this.scene.isPlayer1 ? b.isPlayerUnit : !b.isPlayerUnit;
+
+            if (aIsPlayer1 && !bIsPlayer1) return -1;
+            if (!aIsPlayer1 && bIsPlayer1) return 1;
+            return 0;
+        });
     }
 
     startNextTurn() {
@@ -123,7 +130,6 @@ export class CombatManager {
         } else {
             this.scene.gameState = 'ENEMY_TURN';
             this.scene.ui.setActionMenuVisible(false);
-            // No fake AI here. Just wait for Socket.io!
         }
     }
 }
