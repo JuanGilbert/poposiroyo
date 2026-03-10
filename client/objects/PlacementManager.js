@@ -35,17 +35,32 @@ export class PlacementManager {
         this.scene.ui.hidePlacementUI();
         this.scene.clearHighlights();
 
-        // 2. Change the state to waiting
+        // 1. Change state so the user can't click anything
         this.scene.gameState = 'WAITING_FOR_OPPONENT';
 
-        // 3. Tell the server we are ready to start!
-        // Your server currently listens for "start_game" (from your socketHandler.js)
-        SocketManager.emit("start_game", this.scene.roomId);
+        // 2. Package up the exact units and coordinates we drafted
+        const myUnitsData = this.scene.activeUnits.map(unit => {
+            return {
+                name: unit.name,
+                coordinates: unit.coordinates
+            };
+        });
 
-        // 4. Wait for the server to confirm BOTH players are ready
-        SocketManager.on("game_started", () => {
-            SocketManager.off("game_started"); // clean up listener
-            this.scene.combatManager.start();  // NOW we start combat!
+        // 3. Send them to the Server
+        SocketManager.emit("player_ready", {
+            roomId: this.scene.registry.get('roomId'), // Get the room ID
+            units: myUnitsData
+        });
+
+        // 4. Wait for the server to reply with the opponent's data
+        SocketManager.on("game_started", (data) => {
+            SocketManager.off("game_started");
+
+            // Spawn the real opponent units!
+            this.scene.spawnEnemyTeam(data.opponentUnits);
+
+            // Start the combat phase
+            this.scene.combatManager.start();
         });
     }
 

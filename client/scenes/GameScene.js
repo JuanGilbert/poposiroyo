@@ -14,8 +14,7 @@ export class GameScene extends Phaser.Scene {
 
     init(data) {
         this.playerTeamChoices = data.playerTeam || ['Assassin', 'Mage', 'Paladin'];
-        this.roomId = data.roomId; // <-- Save the Room ID!
-        this.gameMode = data.gameMode;
+        this.registry.set('roomId', data.roomId); // <-- Store this for the managers!
     }
 
     create() {
@@ -45,7 +44,7 @@ export class GameScene extends Phaser.Scene {
         // 3. SPAWN UNITS
         this.activeUnits = [];
         this.spawnPlayerTeam();
-        this.spawnEnemyDummy();
+        spawnEnemyTeam()
 
         this.events.on('cellClicked', (clickedCell) => {
             this.handleCellClicked(clickedCell);
@@ -76,19 +75,18 @@ export class GameScene extends Phaser.Scene {
         });
     }
 
-    spawnEnemyDummy() {
+    spawnEnemyTeam(enemyUnitsData) {
         const gameConfig = this.registry.get('gameConfig');
         const CHARACTER_DATA = gameConfig.characters;
 
-        const pBlueprint = CHARACTER_DATA['Paladin'];
-        const enemy1 = new Unit(pBlueprint, false);
-        this.enemyBoard.spawnUnit(enemy1, [{row: 2, col: 5}, {row: 3, col: 5}, {row: 4, col: 5}]);
-        this.activeUnits.push(enemy1);
+        enemyUnitsData.forEach(data => {
+            const blueprint = CHARACTER_DATA[data.name];
+            const enemyUnit = new Unit(blueprint, false); // isPlayerUnit = false
 
-        const aBlueprint = CHARACTER_DATA['Assassin'];
-        const enemy2 = new Unit(aBlueprint, false);
-        this.enemyBoard.spawnUnit(enemy2, [{row: 7, col: 6}]);
-        this.activeUnits.push(enemy2);
+            // Spawn them EXACTLY where the opponent placed them
+            this.enemyBoard.spawnUnit(enemyUnit, data.coordinates);
+            this.activeUnits.push(enemyUnit);
+        });
     }
 
     // --- MASTER CLICK ROUTER ---
