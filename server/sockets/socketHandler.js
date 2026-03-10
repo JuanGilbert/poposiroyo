@@ -11,7 +11,6 @@ export function socketHandler(io, socket, roomManager) {
     }
   });
 
-  // FIX: Remove players from the queue if they click Cancel!
   socket.on("cancel_matchmaking", () => {
     roomManager.removeFromQueue(socket.id);
   });
@@ -44,8 +43,9 @@ export function socketHandler(io, socket, roomManager) {
       const p1 = room.players[0];
       const p2 = room.players[1];
 
-      io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2] });
-      io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1] });
+      // FIX: Tell the clients who is Player 1 and who is Player 2!
+      io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2], isPlayer1: true });
+      io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1], isPlayer1: false });
     }
   });
 
