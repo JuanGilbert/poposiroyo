@@ -1,6 +1,8 @@
+import { SocketManager } from '../network/SocketManager.js';
+
 export class PlacementManager {
     constructor(scene) {
-        this.scene = scene; // Keep a reference to the main GameScene
+        this.scene = scene;
         this.selectedUnit = null;
         this.placementTime = 30;
         this.placementTimer = null;
@@ -34,11 +36,9 @@ export class PlacementManager {
 
         this.scene.ui.hidePlacementUI();
         this.scene.clearHighlights();
-
-        // 1. Change state so the user can't click anything
         this.scene.gameState = 'WAITING_FOR_OPPONENT';
 
-        // 2. Package up the exact units and coordinates we drafted
+        // Package up the team we drafted
         const myUnitsData = this.scene.activeUnits.map(unit => {
             return {
                 name: unit.name,
@@ -46,26 +46,22 @@ export class PlacementManager {
             };
         });
 
-        // 3. Send them to the Server
+        // Send our board to the server
         SocketManager.emit("player_ready", {
-            roomId: this.scene.registry.get('roomId'), // Get the room ID
+            roomId: this.scene.registry.get('roomId'),
             units: myUnitsData
         });
 
-        // 4. Wait for the server to reply with the opponent's data
+        // Wait for the opponent to finish placing theirs
         SocketManager.on("game_started", (data) => {
             SocketManager.off("game_started");
-
-            // Spawn the real opponent units!
             this.scene.spawnEnemyTeam(data.opponentUnits);
-
-            // Start the combat phase
             this.scene.combatManager.start();
         });
     }
 
     handleClick(cell) {
-        if (cell.isEnemyBoard) return; // Can't touch enemy board yet
+        if (cell.isEnemyBoard) return;
 
         if (cell.hasUnit) {
             // Select the clicked unit

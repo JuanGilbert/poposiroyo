@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { SocketManager } from '../network/SocketManager.js'; // <-- 1. Import your new manager!
+import { SocketManager } from '../network/SocketManager.js';
+
 
 export class MatchmakingScene extends Phaser.Scene {
     constructor() {
@@ -33,23 +34,20 @@ export class MatchmakingScene extends Phaser.Scene {
         this.searchingUIElements.forEach(el => el.setVisible(false));
 
         // --- 3. BUTTON LOGIC ---
-        rankedBtnBg.on('pointerdown', () => rankedBtnBg.setScale(0.95));
         rankedBtnBg.on('pointerup', () => {
             rankedBtnBg.setScale(1);
-
             this.mainUIElements.forEach(el => el.setVisible(false));
             this.searchingUIElements.forEach(el => el.setVisible(true));
             this.isSearching = true;
 
-            // REAL MULTIPLAYER: Ask the server to find a match
+            // 3. Ask the server for a match!
             SocketManager.emit("find_match");
 
-            // REAL MULTIPLAYER: Listen for the server to pair you up!
+            // 4. Wait for the server to find another player
             SocketManager.on("match_found", (data) => {
                 this.isSearching = false;
-                SocketManager.off("match_found"); // Clean up listener
-
-                // Jump to the lobby, and pass the real Room ID from the server
+                SocketManager.off("match_found"); // cleanup
+                // Pass the real room ID to the lobby!
                 this.scene.start('LobbyScene', { gameMode: 'ranked', roomId: data.roomId });
             });
         });

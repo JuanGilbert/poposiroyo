@@ -1,21 +1,16 @@
 import { io } from 'socket.io-client';
 
 class SocketManagerClass {
-  constructor() {
-    this._socket = null;
-  }
+  constructor() { this._socket = null; }
 
   connect() {
     if (this._socket && this._socket.connected) return this._socket;
 
-    // Automatically uses localhost for dev, but safe for mobile/production builds
+    // Uses your live server URL if built, otherwise defaults to localhost for testing!
     const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
     this._socket = io(serverUrl);
 
-    this._socket.on('connect', () => {
-      console.log(`[SocketManager] Connected to server: ${serverUrl}`);
-    });
-
+    this._socket.on('connect', () => console.log(`[SocketManager] Connected to: ${serverUrl}`));
     return this._socket;
   }
 
@@ -23,13 +18,8 @@ class SocketManagerClass {
   emit(event, data) { if (this._socket) this._socket.emit(event, data); }
   on(event, callback) { if (this._socket) this._socket.on(event, callback); }
   off(event) { if (this._socket) this._socket.off(event); }
-  isConnected() { return this._socket && this._socket.connected; }
   disconnect() {
-    if (this._socket) {
-      this._socket.disconnect();
-      this._socket = null;
-    }
+    if (this._socket) { this._socket.disconnect(); this._socket = null; }
   }
 }
-
 export const SocketManager = new SocketManagerClass();
