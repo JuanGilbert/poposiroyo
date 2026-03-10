@@ -1,44 +1,26 @@
-
 import { on, emit }                from './SocketManager.js';
 import { EVENTS, REMATCH_TIMEOUT } from '../utils/Constants.js';
-
+import { showToast }               from '../utils/Helpers.js';
 
 export function initNetworkEvents(sceneRef) {
   on('connect',    () => _onConnect(sceneRef));
   on('disconnect', () => _onDisconnect(sceneRef));
 
-  // Matchmaking & Room
-  on(EVENTS.MATCHMAKING_SEARCH, (data) => _onMatchmakingSearching(data, sceneRef));
-  on(EVENTS.MATCH_FOUND,        (data) => _onMatchFound(data, sceneRef));
-  on(EVENTS.ROOM_CREATED,       (data) => _onRoomCreated(data, sceneRef));
-  on(EVENTS.ROOM_JOINED,        (data) => _onRoomJoined(data, sceneRef));
-  on(EVENTS.OPPONENT_JOINED,    ()     => _onOpponentJoined(sceneRef));
-  on(EVENTS.TEAM_CONFIRMED,     ()     => _onTeamConfirmed(sceneRef));
+  on('match_found',        (data) => _onMatchFound(data, sceneRef));
+  on('room_created',       (data) => _onRoomCreated(data, sceneRef));
+  on('player_joined',      (data) => _onRoomJoined(data, sceneRef));
+  on('room_ready',         ()     => _onOpponentJoined(sceneRef));
 
   // Game
-  on(EVENTS.GAME_START,    (data) => _onGameStart(data, sceneRef));
-  on(EVENTS.ACTION_RESULT, (data) => _onActionResult(data, sceneRef));
-  on(EVENTS.UNIT_DAMAGED,  (data) => _onUnitDamaged(data, sceneRef));
-  on(EVENTS.UNIT_DIED,     (data) => _onUnitDied(data, sceneRef));
-  on(EVENTS.TURN_CHANGE,   (data) => _onTurnChange(data, sceneRef));
-  on(EVENTS.GAME_OVER,     (data) => _onGameOver(data, sceneRef));
-
-  // Rematch
-  on(EVENTS.OPPONENT_REMATCH, (data) => _onOpponentRematch(data, sceneRef));
-  on(EVENTS.REMATCH_START,    (data) => _onRematchStart(data, sceneRef));
-  on(EVENTS.REMATCH_DECLINED, ()     => _onRematchDeclined(sceneRef));
-
-  // Keluar
-  on(EVENTS.OPPONENT_LEFT, ()     => _onOpponentLeft(sceneRef));
-  on(EVENTS.OPPONENT_DC,   (data) => _onOpponentDisconnected(data, sceneRef));
-  on(EVENTS.ERROR_MSG,     (msg)  => _emitToScene(sceneRef, 'showToast', { msg, duration: 3000 }));
+  on('game_started',             (data) => _onGameStart(data, sceneRef));
+  on('combat_action_received',   (data) => _onActionResult(data, sceneRef));
+  on('game_finished',            (data) => _onGameOver(data, sceneRef));
 
   console.log('[NetworkEvents] Semua listener terdaftar');
 }
 
 // ─────────────────────────────────────────────
-//  HELPER — emit ke GameScene FE1
-//  FE1 listen via: this.events.on('namaEvent', ...)
+//  HELPER
 // ─────────────────────────────────────────────
 function _emitToScene(scene, eventName, data) {
   if (scene && scene.events) {
@@ -65,7 +47,13 @@ function _onMatchmakingSearching({ inQueue }, scene) {
 }
 
 function _onMatchFound(data, scene) {
-  _emitToScene(scene, 'matchFound', data);
+  // Use the imported showToast helper
+  showToast(scene, '⚡ LAWAN DITEMUKAN!', 2000);
+
+  // Transition to Lobby
+  if (scene) {
+    scene.scene.start('LobbyScene', { roomId: data.roomId });
+  }
 }
 
 function _onRoomCreated(data, scene) {
@@ -81,11 +69,15 @@ function _onOpponentJoined(scene) {
 }
 
 function _onTeamConfirmed(scene) {
-  _emitToScene(scene, 'teamConfirmed');
+  if (scene) {
+    scene.scene.start('GameScene', {
+      playerTeam: scene.selectedTeam,
+      roomId: scene.roomId
+    });
+  }
 }
 
 function _onGameStart(data, scene) {
-  // Langsung panggil method GameScene FE2
   if (scene && scene.onGameStart) scene.onGameStart(data);
 }
 
@@ -141,16 +133,22 @@ function _onOpponentDisconnected(data, scene) {
 // ─────────────────────────────────────────────
 export function sendCreateRoom()       { emit(EVENTS.CREATE_ROOM); }
 export function sendJoinRoom(code)     { emit(EVENTS.JOIN_ROOM,       { code }); }
-export function sendQuickMatch()       { emit(EVENTS.QUICK_MATCH); }
-export function sendCancelMatchmaking(){ emit(EVENTS.CANCEL_MATCHMAKING); }
-
-// Kirim pilihan tim karakter ke server
-export function sendTeam(teamChoices) {
-  emit(EVENTS.TEAM_READY, { teamChoices });
+export function sendQuickMatch() {
+  emit("find_match");
+}
+export function sendCancelMatchmaking() {
+  emit("cancel_matchmaking");
 }
 
-// Kirim action MOVE atau ATTACK ke server
-// Dari GameScene FE1 handleBattleClick
+export function sendTeam(teamChoices, sceneRef) {
+  if (sceneRef) {
+    sceneRef.scene.start('GameScene', {
+      playerTeam: teamChoices,
+      roomId: sceneRef.roomId
+    });
+  }
+}
+
 export function sendAction(type, unitName, targetRow, targetCol) {
   emit(EVENTS.PLAYER_ACTION, { type, unitName, targetRow, targetCol });
 }

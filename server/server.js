@@ -65,15 +65,15 @@ app.post("/score", (req, res) => {
     time: Date.now()
   })
 
-  leaderboard.sort((a,b)=>b.score-a.score)
+  leaderboard.sort((a, b) => b.score - a.score)
 
   res.json({
-    success:true,
+    success: true,
     leaderboard
   })
 })
 
-app.get("/rooms", (req,res)=>{
+app.get("/rooms", (req, res) => {
   res.json({
     rooms: roomManager.getRooms()
   })
@@ -85,7 +85,7 @@ SOCKET CONNECTION
 ========================
 */
 
-io.on("connection",(socket)=>{
+io.on("connection", (socket) => {
   socketHandler(io, socket, roomManager)
 })
 
@@ -95,8 +95,8 @@ START SERVER
 ========================
 */
 
-const PORT = 3000
+const PORT = process.env.PORT || 3000 // Crucial for Render/Heroku
 
-server.listen(PORT,()=>{
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })

@@ -1,6 +1,8 @@
+import * as SocketManager from '../network/SocketManager.js';
+
 export class PlacementManager {
     constructor(scene) {
-        this.scene = scene; // Keep a reference to the main GameScene
+        this.scene = scene;
         this.selectedUnit = null;
         this.placementTime = 30;
         this.placementTimer = null;
@@ -32,16 +34,34 @@ export class PlacementManager {
 
         if (this.placementTimer) this.placementTimer.remove();
 
-        // Hide UI via the manager
         this.scene.ui.hidePlacementUI();
         this.scene.clearHighlights();
+        this.scene.gameState = 'WAITING_FOR_OPPONENT';
 
-        // CHANGE THIS: Tell the Combat Manager to take over!
-        this.scene.combatManager.start();
+        // Package up the team we drafted
+        const myUnitsData = this.scene.activeUnits.map(unit => {
+            return {
+                name: unit.name,
+                coordinates: unit.coordinates
+            };
+        });
+
+        // Send our board to the server
+        SocketManager.emit("player_ready", {
+            roomId: this.scene.registry.get('roomId'),
+            units: myUnitsData
+        });
+
+        // Wait for the opponent to finish placing theirs
+        SocketManager.on("game_started", (data) => {
+            SocketManager.off("game_started");
+            this.scene.spawnEnemyTeam(data.opponentUnits);
+            this.scene.combatManager.start();
+        });
     }
 
     handleClick(cell) {
-        if (cell.isEnemyBoard) return; // Can't touch enemy board yet
+        if (cell.isEnemyBoard) return;
 
         if (cell.hasUnit) {
             // Select the clicked unit
