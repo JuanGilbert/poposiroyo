@@ -27,9 +27,10 @@ export class PlacementManager {
         });
     }
 
+    // client/objects/PlacementManager.js (Inside the end() function)
+
     end() {
         if (this.scene.gameState !== 'PLACEMENT') return;
-
         if (this.placementTimer) this.placementTimer.remove();
 
         this.scene.ui.hidePlacementUI();
@@ -40,15 +41,16 @@ export class PlacementManager {
             return { name: unit.name, coordinates: unit.coordinates };
         });
 
-        SocketManager.emit("player_ready", {
+        // 1. CHANGE THIS FROM "player_ready" TO "board_ready"
+        SocketManager.emit("board_ready", {
             roomId: this.scene.registry.get('roomId'),
             units: myUnitsData
         });
 
-        SocketManager.on("game_started", (data) => {
-            SocketManager.off("game_started");
-            // FIX: Save the player role so the CombatManager can use it later!
-            this.scene.isPlayer1 = data.isPlayer1;
+        // 2. CHANGE THIS FROM "game_started" TO "combat_started"
+        SocketManager.on("combat_started", (data) => {
+            SocketManager.off("combat_started");
+            // isPlayer1 is already set from the Lobby phase, so we don't need to set it here
             this.scene.spawnEnemyTeam(data.opponentUnits);
             this.scene.combatManager.start();
         });

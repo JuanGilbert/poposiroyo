@@ -1,4 +1,4 @@
-// RoomManager.js
+// server/rooms/RoomManager.js
 class RoomManager {
     constructor() {
         this.rooms = new Map();
@@ -17,8 +17,9 @@ class RoomManager {
             const roomId = `room_${Date.now()}`;
 
             const room = this.createRoom(roomId);
-            room.players = [player1, player2]; // Set players
-            room.status = 'playing'; // Update status
+            // Storing socket IDs directly so socketHandler can use io.to(player1)
+            room.players = [player1, player2];
+            room.status = 'waiting_for_units'; // Give it a specific state
             this.rooms.set(roomId, room);
 
             return room;
@@ -26,7 +27,6 @@ class RoomManager {
         return null;
     }
 
-    // NEW: Remove player if they hit "Cancel" in MatchmakingScene.js
     removeFromQueue(socketId) {
         const index = this.matchmakingQueue.indexOf(socketId);
         if (index !== -1) {
@@ -38,7 +38,7 @@ class RoomManager {
         return {
             id: roomId,
             players: [], // Maksimal 2 atau 4
-            status: 'waiting', // waiting, playing, finished
+            status: 'waiting', // waiting, waiting_for_units, playing, finished
             gridSize: 10,
             turn: 0,
             lastAction: Date.now()
@@ -51,7 +51,7 @@ class RoomManager {
         }
 
         const room = this.rooms.get(roomId);
-        
+
         // Cek jika game sudah mulai atau penuh
         if (room.status !== 'waiting' || room.players.length >= 4) {
             return { error: 'Room tidak tersedia atau penuh' };
@@ -60,7 +60,7 @@ class RoomManager {
         // Tambahkan pemain dengan atribut game lengkap
         const player = {
             id: socketId,
-            username: userData.username || 'Player',
+            username: userData?.username || 'Player',
             hp: 100,
             x: Math.floor(Math.random() * 5),
             y: Math.floor(Math.random() * 5),
@@ -76,8 +76,9 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room) return null;
 
-        const player = room.players.find(p => p.id === socketId);
-        if (player) {
+        // FIXED: Handles if player is an object or just a socket ID string
+        const player = room.players.find(p => p.id === socketId || p === socketId);
+        if (player && typeof player === 'object') {
             player.x = moveData.x;
             player.y = moveData.y;
             room.lastAction = Date.now();
@@ -88,7 +89,8 @@ class RoomManager {
     leaveRoom(socketId) {
         let affectedRoomId = null;
         this.rooms.forEach((room, roomId) => {
-            const index = room.players.findIndex(p => p.id === socketId);
+            // FIXED: Check both string format (matchmaking) and object format (joinRoom)
+            const index = room.players.findIndex(p => p.id === socketId || p === socketId);
             if (index !== -1) {
                 room.players.splice(index, 1);
                 affectedRoomId = roomId;
@@ -98,14 +100,32 @@ class RoomManager {
         return affectedRoomId;
     }
 
-    // NEW: Helper for socketHandler.js
     getRoom(roomId) {
         return this.rooms.get(roomId);
     }
 
-    // NEW: Cleanup logic
     deleteRoom(roomId) {
         this.rooms.delete(roomId);
+    }
+
+    // --- NEW: REQUIRED FOR GAME START (PREVENTS SERVER CRASH) ---
+    startGame(roomId) {
+        const room = this.rooms.get(roomId);
+        if (room) {
+            room.status = 'playing';
+            console.log(`[SERVER] Match started in room: ${roomId}`);
+        }
+    }
+
+    endGame(roomId) {
+        const room = this.rooms.get(roomId);
+        if (room) {
+            room.status = 'finished';
+            console.log(`[SERVER] Match finished in room: ${roomId}`);
+            // You can choose to automatically delete the room here,
+            // or wait for players to disconnect.
+            this.deleteRoom(roomId);
+        }
     }
 }
 
