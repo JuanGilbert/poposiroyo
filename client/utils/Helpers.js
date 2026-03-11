@@ -1,90 +1,47 @@
-// ─────────────────────────────────────────────
-//  Helpers.js — Fungsi utilitas FE2
-//  BERSIH dari DOM — semua pakai Phaser events
-//  Visual ditangani FE1, FE2 hanya emit event
-// ─────────────────────────────────────────────
+import { GRID_ROWS, GRID_COLS } from './Constants.js';
 
-import { BOARD_ROWS, BOARD_COLS } from './Constants.js';
+// --- GRID ---
 
-// ── Emit toast ke FE1 via Phaser events ───────
-// FE1 listen: scene.events.on('showToast', ...)
-export function showToast(scene, msg, duration = 2000) {
-  if (scene && scene.events) {
-    scene.events.emit('showToast', { msg, duration });
-  }
+export function isInBounds(row, col) {
+    return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS;
 }
 
-// ── Emit log ke FE1 via Phaser events ─────────
-// FE1 listen: scene.events.on('addLog', ...)
-export function addLog(scene, msg, cls = '') {
-  if (scene && scene.events) {
-    scene.events.emit('addLog', { msg, cls });
-  }
+export function generateFootprint(startRow, startCol, tileSize) {
+    const coords = [];
+    for (let i = 0; i < tileSize; i++) {
+        coords.push({ row: startRow + i, col: startCol });
+    }
+    return coords;
 }
 
-// ── Cek koordinat valid ───────────────────────
-export function isValidCoord(row, col) {
-  return row >= 0 && row < BOARD_ROWS &&
-         col >= 0 && col < BOARD_COLS;
+export function manhattanDistance(coordA, coordB) {
+    return Math.abs(coordA.row - coordB.row) + Math.abs(coordA.col - coordB.col);
 }
 
-// ── Hitung jarak Manhattan ────────────────────
-// Dari GameScene FE1:
-// Math.abs(cell.row - startCoord.row) + Math.abs(cell.col - startCoord.col)
-export function getManhattanDistance(coord1, coord2) {
-  return Math.abs(coord1.row - coord2.row) +
-         Math.abs(coord1.col - coord2.col);
+// --- UNITS ---
+
+export function getAliveUnits(units) {
+    return units.filter(unit => !unit.isDead);
 }
 
-// ── Hitung footprint unit ─────────────────────
-// Dari GameScene FE1 spawnPlayerTeam:
-// for (let i = 0; i < blueprint.tileSize; i++)
-//   footprint.push({ row: currentRow + i, col: 1 })
-export function getUnitFootprint(startRow, startCol, tileSize) {
-  const footprint = [];
-  for (let i = 0; i < tileSize; i++) {
-    footprint.push({ row: startRow + i, col: startCol });
-  }
-  return footprint;
+export function getAlivePlayerUnits(units) {
+    return units.filter(unit => unit.isPlayerUnit && !unit.isDead);
 }
 
-// ── Hitung sel yang terkena attack ───────────
-// Dari GameScene FE1 handleBattleClick attackOffsets:
-// unit.attackOffsets.forEach(offset => {
-//   const r = cell.row + offset.r
-//   const c = cell.col + offset.c
-// })
-export function getAttackCells(originRow, originCol, attackOffsets) {
-  const cells = [];
-  attackOffsets.forEach(offset => {
-    const r = originRow + offset.r;
-    const c = originCol + offset.c;
-    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
-  });
-  return cells;
+export function getAliveEnemyUnits(units) {
+    return units.filter(unit => !unit.isPlayerUnit && !unit.isDead);
 }
 
-// ── Hitung sel yang ter-reveal ────────────────
-// Dari GameScene FE1 handleBattleClick revealOffsets:
-// unit.revealOffsets.forEach(offset => { ... })
-export function getRevealCells(originRow, originCol, revealOffsets) {
-  const cells = [];
-  revealOffsets.forEach(offset => {
-    const r = originRow + offset.r;
-    const c = originCol + offset.c;
-    if (isValidCoord(r, c)) cells.push({ row: r, col: c });
-  });
-  return cells;
-}
-
-// ── Sort unit berdasarkan speed ───────────────
-// Dari GameScene FE1 buildTurnQueue:
-// this.turnQueue.sort((a, b) => b.speed - a.speed)
 export function sortBySpeed(units) {
-  return [...units].sort((a, b) => b.speed - a.speed);
+    return [...units].sort((a, b) => b.speed - a.speed);
 }
 
-// ── Format HP ─────────────────────────────────
-export function formatHP(current, max) {
-  return `${current}/${max}`;
+export function serializeUnits(units) {
+    return units.map(unit => ({ name: unit.name, coordinates: unit.coordinates }));
+}
+
+// --- UI ---
+
+export function calcTurnTrackerStartX(showCount, boxSize, spacing) {
+    return -(((showCount * boxSize) + ((showCount - 1) * spacing)) / 2) + (boxSize / 2);
 }
