@@ -4,6 +4,7 @@ import { Unit } from '../objects/Unit.js';
 import { BattleUI } from '../objects/BattleUI.js';
 import { PlacementManager } from '../objects/PlacementManager.js';
 import { CombatManager } from '../objects/CombatManager.js'; // <-- 1. Import it
+import * as SocketManager from '../network/SocketManager.js';
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -28,6 +29,15 @@ export class GameScene extends Phaser.Scene {
         const cellSize = Math.floor(Math.min(maxGridWidth / 10, maxGridHeight / 10));
         const gridStartX = (screenWidth - (cellSize * 10)) / 2;
         const gridStartY = 100;
+
+        SocketManager.on("lobby_kicked", (data) => {
+            alert(data.reason);
+            this.scene.start('MenuScene');
+        });
+        SocketManager.on("player_left", () => {
+            alert("Your opponent disconnected!");
+            this.scene.start('MenuScene');
+        });
 
         // 1. BOARDS
         this.playerBoard = new Board(this, gridStartX, gridStartY, cellSize, false);

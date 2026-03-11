@@ -70,4 +70,25 @@ export function socketHandler(io, socket, roomManager) {
       roomManager.deleteRoom(roomId);
     }
   });
+
+  // --- LOBBY TIMEOUT KICK ---
+  socket.on("lobby_timeout_kick", (data) => {
+    const { roomId } = data;
+
+    // If the client sent a broken ID, stop here to prevent crashes
+    if (!roomId) {
+      console.log("[SERVER] ❌ Received a kick request but roomId was undefined!");
+      return;
+    }
+
+    console.log(`[SERVER] ⏱️ Lobby ${roomId} timed out. Kicking players.`);
+
+    // Tell everyone in the room they are kicked
+    io.to(roomId).emit("lobby_kicked", {
+      reason: "Someone failed to pick their team in time!"
+    });
+
+    // Destroy the ghost room
+    roomManager.deleteRoom(roomId);
+  });
 }
