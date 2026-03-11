@@ -1,148 +1,72 @@
-export class RoomManager {
-
-  constructor(){
-    this.rooms = {}
-    this.waitingQueue = []
-  }
-
-  generateRoomId(){
-
-    let roomId
-
-    do{
-      roomId = "room_" + Math.random().toString(36).substring(2,8)
-    }while(this.rooms[roomId])
-
-    return roomId
-  }
-
-  createRoom(hostId){
-
-    const roomId = this.generateRoomId()
-
-    const room = {
-      id: roomId,
-      players: [hostId],
-      host: hostId,
-      gameStarted:false,
-      createdAt: Date.now(),
-      state:"waiting"
+// RoomManager.js
+class RoomManager {
+    constructor() {
+        this.rooms = new Map();
     }
 
-    this.rooms[roomId] = room
-
-    return room
-  }
-
-  joinRoom(roomId, playerId){
-
-    const room = this.rooms[roomId]
-
-    if(!room) return {error:"ROOM_NOT_FOUND"}
-
-    if(room.players.includes(playerId)){
-      return {error:"ALREADY_IN_ROOM"}
+    createRoom(roomId) {
+        return {
+            id: roomId,
+            players: [], // Maksimal 2 atau 4
+            status: 'waiting', // waiting, playing, finished
+            gridSize: 10,
+            turn: 0,
+            lastAction: Date.now()
+        };
     }
 
-    if(room.players.length >=2){
-      return {error:"ROOM_FULL"}
-    }
-
-    room.players.push(playerId)
-
-    if(room.players.length ===2){
-      room.state = "ready"
-    }
-
-    return room
-  }
-
-  addToQueue(playerId){
-
-    if(this.waitingQueue.includes(playerId)){
-      return null
-    }
-
-    this.waitingQueue.push(playerId)
-
-    if(this.waitingQueue.length >=2){
-
-      const p1 = this.waitingQueue.shift()
-      const p2 = this.waitingQueue.shift()
-
-      const room = this.createRoom(p1)
-
-      room.players.push(p2)
-      room.state = "ready"
-
-      return room
-    }
-
-    return null
-  }
-
-  removeFromQueue(playerId){
-    this.waitingQueue = this.waitingQueue.filter(p=>p!==playerId)
-  }
-
-  getRoom(roomId){
-    return this.rooms[roomId]
-  }
-
-  startGame(roomId){
-
-    const room = this.rooms[roomId]
-
-    if(!room) return false
-
-    room.gameStarted = true
-    room.state = "playing"
-
-    return true
-  }
-
-  endGame(roomId){
-
-    const room = this.rooms[roomId]
-
-    if(!room) return
-
-    room.state = "finished"
-  }
-
-  removePlayer(playerId){
-
-    for(const roomId in this.rooms){
-
-      const room = this.rooms[roomId]
-
-      if(room.players.includes(playerId)){
-
-        room.players = room.players.filter(p=>p!==playerId)
-
-        if(room.players.length ===0){
-          delete this.rooms[roomId]
+    joinRoom(roomId, socketId, userData) {
+        if (!this.rooms.has(roomId)) {
+            this.rooms.set(roomId, this.createRoom(roomId));
         }
 
-        return roomId
-      }
+        const room = this.rooms.get(roomId);
+        
+        // Cek jika game sudah mulai atau penuh
+        if (room.status !== 'waiting' || room.players.length >= 4) {
+            return { error: 'Room tidak tersedia atau penuh' };
+        }
+
+        // Tambahkan pemain dengan atribut game lengkap
+        const player = {
+            id: socketId,
+            username: userData.username || 'Player',
+            hp: 100,
+            x: Math.floor(Math.random() * 5),
+            y: Math.floor(Math.random() * 5),
+            score: 0,
+            isReady: false
+        };
+
+        room.players.push(player);
+        return { room, player };
     }
 
-    this.removeFromQueue(playerId)
+    updatePlayerAction(roomId, socketId, moveData) {
+        const room = this.rooms.get(roomId);
+        if (!room) return null;
 
-    return null
-  }
+        const player = room.players.find(p => p.id === socketId);
+        if (player) {
+            player.x = moveData.x;
+            player.y = moveData.y;
+            room.lastAction = Date.now();
+        }
+        return room;
+    }
 
-  deleteRoom(roomId){
-    delete this.rooms[roomId]
-  }
-
-  getRooms(){
-    return this.rooms
-  }
-
-  getRoomCount(){
-    return Object.keys(this.rooms).length
-  }
-
+    leaveRoom(socketId) {
+        let affectedRoomId = null;
+        this.rooms.forEach((room, roomId) => {
+            const index = room.players.findIndex(p => p.id === socketId);
+            if (index !== -1) {
+                room.players.splice(index, 1);
+                affectedRoomId = roomId;
+                if (room.players.length === 0) this.rooms.delete(roomId);
+            }
+        });
+        return affectedRoomId;
+    }
 }
+
+export const roomManager = new RoomManager();
