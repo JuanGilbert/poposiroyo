@@ -1,3 +1,6 @@
+// Constants.js
+// Konstanta global berdasarkan seluruh kode FE1.
+
 // Grid (dari Board.js & GameScene.js)
 export const GRID_SIZE = 10;
 export const GRID_ROWS = 10;
@@ -62,3 +65,6 @@ export const TURN = {
 
 // Team (dari LobbyScene.js)
 export const MAX_TEAM_SIZE = 3;
+
+// Rematch (placeholder - belum ada di BE)
+export const REMATCH_TIMEOUT = 'rematch_timeout';

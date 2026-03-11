@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite client --host",
     "build": "vite build client",
-    "preview": "vite preview client"
+    "preview": "vite preview client",
+    "start": "node server/server.js"
   },
   "repository": {
     "type": "git",

@@ -2,27 +2,19 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import socketHandler from './socketHandler.js';
+import { socketHandler } from './sockets/socketHandler.js'; // Pastikan path benar
+import { roomManager } from './rooms/RoomManager.js'; // Impor roomManager
 
 const app = express();
 const server = createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
-// Inisialisasi Socket.io dengan konfigurasi High-Performance
-const io = new Server(server, {
-    cors: { origin: "*" },
-    pingTimeout: 60000, // Menghindari pemain DC karena lag sebentar
-});
-
-// Jalankan sistem sinkronisasi
-socketHandler(io);
-
-// Middleware sederhana untuk monitoring server
-app.get('/status', (req, res) => {
-    res.send({ status: 'Game Server Running', time: new Date() });
+// Pindahkan logika connection ke sini
+io.on('connection', (socket) => {
+    socketHandler(io, socket, roomManager);
 });
 
 const PORT = 3000;
 server.listen(PORT, () => {
-    console.log(`=== PO POSI ROYO SERVER READY ===`);
-    console.log(`Port: ${PORT} | Mode: ESM (No Require)`);
+    console.log(`=== SERVER RUNNING ON PORT ${PORT} ===`);
 });
