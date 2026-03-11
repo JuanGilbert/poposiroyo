@@ -1,102 +1,28 @@
-import express from "express"
-import http from "http"
-import { Server } from "socket.io"
+// server.js
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import socketHandler from './socketHandler.js';
 
-import { socketHandler } from "./sockets/socketHandler.js"
-import { RoomManager } from "./rooms/RoomManager.js"
+const app = express();
+const server = createServer(app);
 
-const app = express()
-app.use(express.json())
-
-const server = http.createServer(app)
-
+// Inisialisasi Socket.io dengan konfigurasi High-Performance
 const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
-})
+    cors: { origin: "*" },
+    pingTimeout: 60000, // Menghindari pemain DC karena lag sebentar
+});
 
-/*
-========================
-ROOM MANAGER INSTANCE
-========================
-*/
-const roomManager = new RoomManager()
+// Jalankan sistem sinkronisasi
+socketHandler(io);
 
-/*
-========================
-LEADERBOARD (temporary)
-========================
-*/
-const leaderboard = []
+// Middleware sederhana untuk monitoring server
+app.get('/status', (req, res) => {
+    res.send({ status: 'Game Server Running', time: new Date() });
+});
 
-/*
-========================
-HTTP API
-========================
-*/
-
-app.get("/status", (req, res) => {
-  res.json({
-    status: "Server running",
-    rooms: roomManager.getRoomCount()
-  })
-})
-
-app.get("/leaderboard", (req, res) => {
-  res.json({
-    leaderboard
-  })
-})
-
-app.post("/score", (req, res) => {
-
-  const { player, score } = req.body
-
-  if (!player || score === undefined) {
-    return res.status(400).json({
-      error: "player and score required"
-    })
-  }
-
-  leaderboard.push({
-    player,
-    score,
-    time: Date.now()
-  })
-
-  leaderboard.sort((a, b) => b.score - a.score)
-
-  res.json({
-    success: true,
-    leaderboard
-  })
-})
-
-app.get("/rooms", (req, res) => {
-  res.json({
-    rooms: roomManager.getRooms()
-  })
-})
-
-/*
-========================
-SOCKET CONNECTION
-========================
-*/
-
-io.on("connection", (socket) => {
-  socketHandler(io, socket, roomManager)
-})
-
-/*
-========================
-START SERVER
-========================
-*/
-
-const PORT = process.env.PORT || 3000 // Crucial for Render/Heroku
-
+const PORT = 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+    console.log(`=== PO POSI ROYO SERVER READY ===`);
+    console.log(`Port: ${PORT} | Mode: ESM (No Require)`);
+});
