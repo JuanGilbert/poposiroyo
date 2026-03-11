@@ -1,9 +1,9 @@
-import { GRID_ROWS, GRID_COLS } from './Constants.js';
+import { BOARD_ROWS, BOARD_COLS } from './Constants.js';
 
 // --- GRID ---
 
 export function isInBounds(row, col) {
-    return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS;
+    return row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS;
 }
 
 export function generateFootprint(startRow, startCol, tileSize) {
