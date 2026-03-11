@@ -1,3 +1,6 @@
+// Constants.js
+// Konstanta global berdasarkan kode FE1.
+
 // Grid (dari GameScene.js)
 export const GRID_SIZE = 10;
 export const GRID_ROWS = 10;
