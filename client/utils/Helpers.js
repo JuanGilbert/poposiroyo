@@ -45,3 +45,23 @@ export function serializeUnits(units) {
 export function calcTurnTrackerStartX(showCount, boxSize, spacing) {
     return -(((showCount * boxSize) + ((showCount - 1) * spacing)) / 2) + (boxSize / 2);
 }
+
+// Tampilkan toast notification di scene Phaser
+// Dipakai di NetworkEvents.js _onMatchFound
+export function showToast(scene, message, duration = 2000) {
+    if (!scene) return;
+
+    const screenWidth = scene.scale.width;
+    const screenHeight = scene.scale.height;
+
+    const toast = scene.add.text(screenWidth / 2, screenHeight * 0.15, message, {
+        fontSize: '20px',
+        fill: '#ffffff',
+        backgroundColor: '#333333',
+        padding: { left: 16, right: 16, top: 8, bottom: 8 }
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(999);
+
+    scene.time.delayedCall(duration, () => {
+        if (toast && toast.active) toast.destroy();
+    });
+}
