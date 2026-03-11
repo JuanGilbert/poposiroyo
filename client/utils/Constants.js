@@ -1,10 +1,9 @@
-// Constants.js
-// Konstanta global berdasarkan seluruh kode FE1.
-
 // Grid (dari Board.js & GameScene.js)
 export const GRID_SIZE = 10;
 export const GRID_ROWS = 10;
 export const GRID_COLS = 10;
+export const BOARD_ROWS = 10;
+export const BOARD_COLS = 10;
 
 // Game State (dari GameScene.js, CombatManager.js, PlacementManager.js)
 export const GAME_STATE = {
