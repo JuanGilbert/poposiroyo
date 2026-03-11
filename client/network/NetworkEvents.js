@@ -107,14 +107,14 @@ export function sendCancelMatchmaking() {
     emit('cancel_matchmaking');
 }
 
-// Kirim team ke server lalu pindah ke GameScene
-// Dipanggil dari LobbyScene.js
 export function sendTeam(teamChoices, sceneRef) {
-    const roomId = sceneRef?.roomId || sceneRef?.registry.get('roomId');
-    emit('player_ready', {
-        roomId,
+    // 1. CHANGE THIS FROM "player_ready" TO "lobby_ready"
+    emit("lobby_ready", {
+        roomId: sceneRef.roomId,
         units: teamChoices
     });
+
+    showToast(sceneRef, 'WAITING FOR OPPONENT...', 2000);
 }
 
 export function sendCombatAction(roomId, actionType, targetCoord) {

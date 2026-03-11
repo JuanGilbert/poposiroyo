@@ -46,22 +46,44 @@ export function socketHandler(io, socket, roomManager) {
   });
 
   // --- GAMEPLAY LOGIC (KEEPS YOUR ISPLAYER1 FIX) ---
-  socket.on("player_ready", (data) => {
+  // --- PHASE 1: LOBBY (Character Selection) ---
+  socket.on("lobby_ready", (data) => {
     const { roomId, units } = data;
     const room = roomManager.getRoom(roomId);
     if (!room) return;
 
-    if (!room.readyPlayers) room.readyPlayers = {};
-    room.readyPlayers[socket.id] = units;
+    if (!room.lobbyReadyPlayers) room.lobbyReadyPlayers = {};
+    room.lobbyReadyPlayers[socket.id] = units;
 
-    if (Object.keys(room.readyPlayers).length === 2) {
+    // When both players lock in their characters, move to the GameScene/Placement
+    if (Object.keys(room.lobbyReadyPlayers).length === 2) {
+      const p1 = room.players[0].id || room.players[0];
+      const p2 = room.players[1].id || room.players[1];
+
+      io.to(p1).emit("game_started", { isPlayer1: true });
+      io.to(p2).emit("game_started", { isPlayer1: false });
+    }
+  });
+
+  // --- PHASE 2: PLACEMENT (Board Setup) ---
+  socket.on("board_ready", (data) => {
+    const { roomId, units } = data;
+    const room = roomManager.getRoom(roomId);
+    if (!room) return;
+
+    if (!room.boardReadyPlayers) room.boardReadyPlayers = {};
+    room.boardReadyPlayers[socket.id] = units;
+
+    // When both players finish dragging units, start the actual combat!
+    if (Object.keys(room.boardReadyPlayers).length === 2) {
       roomManager.startGame(roomId);
-      const p1 = room.players[0];
-      const p2 = room.players[1];
 
-      // Keep your fix: Tell the clients who is Player 1 and who is Player 2
-      io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2], isPlayer1: true });
-      io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1], isPlayer1: false });
+      const p1 = room.players[0].id || room.players[0];
+      const p2 = room.players[1].id || room.players[1];
+
+      // Cross over the placement data to opponents
+      io.to(p1).emit("combat_started", { opponentUnits: room.boardReadyPlayers[p2] });
+      io.to(p2).emit("combat_started", { opponentUnits: room.boardReadyPlayers[p1] });
     }
   });
 
@@ -90,10 +112,14 @@ export function socketHandler(io, socket, roomManager) {
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
-    // Ensure they are removed from the queue if they DC while searching
-    roomManager.removeFromQueue(socket.id);
+    // Remove from matchmaking if they were searching
+    if (roomManager.removeFromQueue) {
+      roomManager.removeFromQueue(socket.id);
+    }
 
-    const roomId = roomManager.removePlayer(socket.id);
+    // FIXED: Use leaveRoom instead of removePlayer
+    const roomId = roomManager.leaveRoom(socket.id);
+
     if(roomId) {
       io.to(roomId).emit("player_left");
       roomManager.deleteRoom(roomId);

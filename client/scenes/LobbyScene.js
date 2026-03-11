@@ -59,6 +59,18 @@ export class LobbyScene extends Phaser.Scene {
             });
         });
 
+        // Inside create() in LobbyScene.js
+        SocketManager.on("game_started", (data) => {
+            console.log("Both players ready! Starting match...");
+
+            this.scene.start('GameScene', {
+                playerTeam: this.selectedTeam, // Your picked units
+                opponentUnits: data.opponentUnits, // Units from the other player
+                isPlayer1: data.isPlayer1, // Assigned by server
+                roomId: this.roomId
+            });
+        });
+
         // --- TIMER SETUP ---
         this.timeLeft = 30; // 30 seconds to pick
 
