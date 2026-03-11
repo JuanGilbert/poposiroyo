@@ -5,155 +5,79 @@ import { Server } from "socket.io"
 import { socketHandler } from "./sockets/socketHandler.js"
 import { RoomManager } from "./rooms/RoomManager.js"
 
-import fs from "fs"
-import path from "path"
-import { fileURLToPath } from "url"
-
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-
 const app = express()
-
 app.use(express.json())
 
 const server = http.createServer(app)
 
-const io = new Server(server,{
-  cors:{
-    origin:"*"
+const io = new Server(server, {
+  cors: {
+    origin: "*"
   }
 })
 
-
-
 /*
 ========================
-ROOM MANAGER
+ROOM MANAGER INSTANCE
 ========================
 */
-
 const roomManager = new RoomManager()
 
-
-
 /*
 ========================
-TEMP LEADERBOARD
+LEADERBOARD (temporary)
 ========================
 */
-
 const leaderboard = []
 
-
-
 /*
 ========================
-SERVER STATUS
+HTTP API
 ========================
 */
 
-app.get("/status",(req,res)=>{
-
+app.get("/status", (req, res) => {
   res.json({
-    status:"Server running",
-    rooms:roomManager.getRoomCount()
+    status: "Server running",
+    rooms: roomManager.getRoomCount()
   })
-
 })
 
-
-
-/*
-========================
-LEADERBOARD
-========================
-*/
-
-app.get("/leaderboard",(req,res)=>{
-
+app.get("/leaderboard", (req, res) => {
   res.json({
     leaderboard
   })
-
 })
 
+app.post("/score", (req, res) => {
 
-app.post("/score",(req,res)=>{
+  const { player, score } = req.body
 
-  const {player,score} = req.body
-
-  if(!player || score === undefined){
-
+  if (!player || score === undefined) {
     return res.status(400).json({
-      error:"player and score required"
+      error: "player and score required"
     })
-
   }
 
   leaderboard.push({
     player,
     score,
-    time:Date.now()
+    time: Date.now()
   })
 
-  leaderboard.sort((a,b)=>b.score-a.score)
+  leaderboard.sort((a, b) => b.score - a.score)
 
   res.json({
-    success:true,
+    success: true,
     leaderboard
   })
-
 })
 
-
-
-/*
-========================
-ROOM LIST
-========================
-*/
-
-app.get("/rooms",(req,res)=>{
-
+app.get("/rooms", (req, res) => {
   res.json({
-    rooms:roomManager.getRooms()
+    rooms: roomManager.getRooms()
   })
-
 })
-
-
-
-/*
-========================
-GAME CONFIG ENDPOINT
-========================
-*/
-
-app.get("/game-config",(req,res)=>{
-
-  const configPath = path.join(__dirname,"../client/public/game-config.json")
-
-  try{
-
-    const config = JSON.parse(
-      fs.readFileSync(configPath,"utf8")
-    )
-
-    res.json(config)
-
-  }catch(err){
-
-    res.status(500).json({
-      error:"Failed to load game config"
-    })
-
-  }
-
-})
-
-
 
 /*
 ========================
@@ -161,15 +85,9 @@ SOCKET CONNECTION
 ========================
 */
 
-io.on("connection",(socket)=>{
-
-  console.log("Player connected:",socket.id)
-
-  socketHandler(io,socket,roomManager)
-
+io.on("connection", (socket) => {
+  socketHandler(io, socket, roomManager)
 })
-
-
 
 /*
 ========================
@@ -177,10 +95,8 @@ START SERVER
 ========================
 */
 
-const PORT = 3000
+const PORT = process.env.PORT || 3000 // Crucial for Render/Heroku
 
-server.listen(PORT,()=>{
-
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
-
 })

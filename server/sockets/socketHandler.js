@@ -1,181 +1,65 @@
-import GameManager from "../game/GameManager.js"
+export function socketHandler(io, socket, roomManager) {
+  console.log("Player connected:", socket.id);
 
-export function socketHandler(io, socket, roomManager){
-
-  console.log("Player connected:", socket.id)
-
-  /*
-  ========================
-  RANDOM MATCH
-  ========================
-  */
-
-  socket.on("find_match",()=>{
-
-    const room = roomManager.addToQueue(socket.id)
-
+  socket.on("find_match", () => {
+    const room = roomManager.addToQueue(socket.id);
     if(room){
-
-      room.players.forEach(player=>{
-        io.sockets.sockets.get(player)?.join(room.id)
-      })
-
-      const board1 = createBoard()
-      const board2 = createBoard()
-
-      room.game = new GameManager(room.id, board1, board2)
-
-      io.to(room.id).emit("match_found",{
-        roomId:room.id,
-        players:room.players
-      })
-
-      io.to(room.id).emit("game_started")
-
-    }else{
-
-      socket.emit("matchmaking_wait")
+      room.players.forEach(player => io.sockets.sockets.get(player)?.join(room.id));
+      io.to(room.id).emit("match_found", { roomId: room.id, players: room.players });
+    } else {
+      socket.emit("matchmaking_wait");
     }
+  });
 
-  })
+  socket.on("cancel_matchmaking", () => {
+    roomManager.removeFromQueue(socket.id);
+  });
 
+  socket.on("create_room", () => {
+    const room = roomManager.createRoom(socket.id);
+    socket.join(room.id);
+    socket.emit("room_created", { roomId: room.id });
+  });
 
-  /*
-  ========================
-  FRIEND MATCH
-  ========================
-  */
+  socket.on("join_room", (roomId) => {
+    const result = roomManager.joinRoom(roomId, socket.id);
+    if(result?.error){ socket.emit("room_error", result.error); return; }
 
-  socket.on("create_room",()=>{
+    socket.join(roomId);
+    io.to(roomId).emit("player_joined", { players: result.players });
+    if(result.players.length === 2) io.to(roomId).emit("room_ready", { roomId });
+  });
 
-    const room = roomManager.createRoom(socket.id)
+  socket.on("player_ready", (data) => {
+    const { roomId, units } = data;
+    const room = roomManager.getRoom(roomId);
+    if (!room) return;
 
-    socket.join(room.id)
+    if (!room.readyPlayers) room.readyPlayers = {};
+    room.readyPlayers[socket.id] = units;
 
-    socket.emit("room_created",{
-      roomId:room.id
-    })
+    if (Object.keys(room.readyPlayers).length === 2) {
+      roomManager.startGame(roomId);
+      const p1 = room.players[0];
+      const p2 = room.players[1];
 
-  })
-
-
-  socket.on("join_room",(roomId)=>{
-
-    const result = roomManager.joinRoom(roomId, socket.id)
-
-    if(result?.error){
-      socket.emit("room_error",result.error)
-      return
+      // FIX: Tell the clients who is Player 1 and who is Player 2!
+      io.to(p1).emit("game_started", { opponentUnits: room.readyPlayers[p2], isPlayer1: true });
+      io.to(p2).emit("game_started", { opponentUnits: room.readyPlayers[p1], isPlayer1: false });
     }
+  });
 
-    socket.join(roomId)
+  socket.on("combat_action", (data) => {
+    const { roomId } = data;
+    socket.to(roomId).emit("combat_action_received", data);
+  });
 
-    io.to(roomId).emit("player_joined",{
-      players: result.players
-    })
-
-    /*
-    AUTO START GAME
-    */
-
-    if(result.players.length ===2){
-
-      roomManager.startGame(roomId)
-
-      const room = roomManager.getRoom(roomId)
-
-      const board1 = createBoard()
-      const board2 = createBoard()
-
-      room.game = new GameManager(roomId, board1, board2)
-
-      io.to(roomId).emit("game_started",{
-        roomId
-      })
+  socket.on("disconnect", () => {
+    console.log("Player disconnected:", socket.id);
+    const roomId = roomManager.removePlayer(socket.id);
+    if(roomId) {
+      io.to(roomId).emit("player_left");
+      roomManager.deleteRoom(roomId);
     }
-
-  })
-
-
-  /*
-  ========================
-  PLAYER ATTACK
-  ========================
-  */
-
-  socket.on("attack",(data)=>{
-
-    const {roomId,x,y} = data
-
-    const room = roomManager.getRoom(roomId)
-
-    if(!room) return
-
-    if(!room.game) return
-
-    const playerIndex = room.players.indexOf(socket.id)
-
-    if(playerIndex === -1) return
-
-    const playerId = playerIndex === 0 ? "p1" : "p2"
-
-    const result = room.game.attack(playerId,x,y)
-
-    io.to(roomId).emit("attack_result",result)
-
-    if(result.gameOver){
-
-      io.to(roomId).emit("game_finished",{
-        winner:result.winner
-      })
-
-      roomManager.endGame(roomId)
-
-    }
-
-  })
-
-
-  /*
-  ========================
-  PLAYER DISCONNECT
-  ========================
-  */
-
-  socket.on("disconnect",()=>{
-
-    console.log("Player disconnected:", socket.id)
-
-    const roomId = roomManager.removePlayer(socket.id)
-
-    if(roomId){
-
-      io.to(roomId).emit("player_left")
-
-      roomManager.deleteRoom(roomId)
-
-    }
-
-  })
-
-}
-
-
-
-/*
-========================
-BOARD GENERATOR
-========================
-*/
-
-function createBoard(){
-
-  const size = 10
-
-  const board = Array(size)
-    .fill(null)
-    .map(()=>Array(size).fill(0))
-
-  return board
-
+  });
 }

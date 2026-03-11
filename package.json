@@ -4,7 +4,7 @@
   "description": "Game CW Mobile",
   "main": "main.js",
   "scripts": {
-    "dev": "vite client",
+    "dev": "vite client --host",
     "build": "vite build client",
     "preview": "vite preview client"
   },
