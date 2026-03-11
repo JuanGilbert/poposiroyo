@@ -14,7 +14,8 @@ export class GameScene extends Phaser.Scene {
 
     init(data) {
         this.playerTeamChoices = data.playerTeam || ['Assassin', 'Mage', 'Paladin'];
-        this.registry.set('roomId', data.roomId); // <-- Store this for the managers!
+        this.registry.set('roomId', data.roomId);
+        this.isPlayer1 = data.isPlayer1; // <-- ADD THIS LINE to save the player role!
     }
 
     create() {

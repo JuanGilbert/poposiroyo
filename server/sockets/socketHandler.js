@@ -54,6 +54,14 @@ export function socketHandler(io, socket, roomManager) {
     socket.to(roomId).emit("combat_action_received", data);
   });
 
+  // --- ADD THIS BLOCK ---
+  socket.on("game_over", (data) => {
+    const { roomId, isPlayer1Winner } = data;
+    socket.to(roomId).emit("game_over_received", { isPlayer1Winner });
+    roomManager.endGame(roomId);
+  });
+  // ----------------------
+
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
     const roomId = roomManager.removePlayer(socket.id);
