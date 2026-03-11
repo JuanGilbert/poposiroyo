@@ -2,6 +2,36 @@
 class RoomManager {
     constructor() {
         this.rooms = new Map();
+        this.matchmakingQueue = [];
+    }
+
+    addToQueue(socketId) {
+        if (!this.matchmakingQueue.includes(socketId)) {
+            this.matchmakingQueue.push(socketId);
+        }
+
+        // If we have 2 players, create a match
+        if (this.matchmakingQueue.length >= 2) {
+            const player1 = this.matchmakingQueue.shift();
+            const player2 = this.matchmakingQueue.shift();
+            const roomId = `room_${Date.now()}`;
+
+            const room = this.createRoom(roomId);
+            room.players = [player1, player2]; // Set players
+            room.status = 'playing'; // Update status
+            this.rooms.set(roomId, room);
+
+            return room;
+        }
+        return null;
+    }
+
+    // NEW: Remove player if they hit "Cancel" in MatchmakingScene.js
+    removeFromQueue(socketId) {
+        const index = this.matchmakingQueue.indexOf(socketId);
+        if (index !== -1) {
+            this.matchmakingQueue.splice(index, 1);
+        }
     }
 
     createRoom(roomId) {
@@ -66,6 +96,16 @@ class RoomManager {
             }
         });
         return affectedRoomId;
+    }
+
+    // NEW: Helper for socketHandler.js
+    getRoom(roomId) {
+        return this.rooms.get(roomId);
+    }
+
+    // NEW: Cleanup logic
+    deleteRoom(roomId) {
+        this.rooms.delete(roomId);
     }
 }
 
